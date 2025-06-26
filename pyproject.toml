@@ -1,0 +1,64 @@
+[project]
+name = "simplicity"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "yanli", email = "mail@yanli.one"},
+]
+dependencies = [
+    "load-dotenv>=0.1.0",
+    "pydantic-settings>=2.10.0",
+    "stone-brick-toolkit>=0.8.0",
+    "logfire>=3.21.1",
+    "anyio>=3.9.0",
+    "pydantic-ai-slim[openai]>=0.3.2",
+    "tomli>=2.2.1",
+    "httpx>=0.28.1",
+    "tenacity>=9.1.2",
+]
+requires-python = ">=3.13"
+readme = "README.md"
+license = {text = "AGPL-3.0-or-later"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[tool.pdm]
+distribution = true
+
+
+
+[tool.pyright]
+venvPath = ".venv"
+
+[tool.ruff]
+target-version = "py313"
+exclude = []
+[tool.ruff.lint]
+select = ["E", "F", "G", "B", "I", "SIM", "TID", "PL", "RUF"]
+ignore = [
+    "RUF001",  # '，' vs. ','
+    "RUF003",  # Ambiguous unicode character comment
+    "E501",    # Line too long
+    "E402",    # Module level import not at top of file
+    "PLR0911", # Too many return statements
+    "PLR0912", # Too many branches
+    "PLR0913", # Too many arguments in function definition
+    "PLR0915", # Too many statements
+    "SIM105",  # Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+    "SIM102",  # Use a single `if` statement instead of nested `if` statements
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["simplicity"]
+
+
+[tool.pdm.scripts]
+fix = { shell = "python -m ruff check --fix && python -m ruff format" }
+check = { shell = 'python -m ruff check && python -m ruff format --check' }
+[dependency-groups]
+dev = [
+    "ruff>=0.12.0",
+]
