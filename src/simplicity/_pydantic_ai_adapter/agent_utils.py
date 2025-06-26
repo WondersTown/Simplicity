@@ -23,63 +23,48 @@ from simplicity.common.event import (
     EventTaskOutput,
     EventTaskOutputStream,
     EventTaskOutputStreamDelta,
-    EventTaskRoot,
+    EventTaskStart,
     TaskEvent,
     EndResult,
-    default_run,
+    EventDeps,
 )
 
-
 @dataclass
-class BaseDeps:
-    _event_parent: Context = field(default_factory=lambda: Context())
-    _event_collector: DefaultEventCollector = field(
-        default_factory=DefaultEventCollector
-    )
-    _event_being_consuming: bool = False
-
-    async def event_send(self, event: Event):
-        event.ctx = event.ctx or self._event_parent.spawn()
-        await self._event_collector.send_event(event)
+class PydanticAIDeps:
+    event_deps: EventDeps = field(default_factory=EventDeps)
 
 
 T = TypeVar("T")
 
 
-def fork_deps(deps: BaseDeps) -> BaseDeps:
-    another_deps = copy(deps)
-    another_deps._event_parent = deps._event_parent.spawn()
-    return another_deps
-
-
-def fork_pydantic_ai_ctx(ctx: RunContext[BaseDeps]) -> RunContext[BaseDeps]:
+def fork_pydantic_ai_ctx(ctx: RunContext[PydanticAIDeps]) -> RunContext[PydanticAIDeps]:
     new_ctx = copy(ctx)
-    new_ctx.deps = fork_deps(ctx.deps)
+    new_ctx.deps.event_deps = ctx.deps.event_deps.spawn()
     return new_ctx
 
 
 async def prod_run_stream(
-    deps: BaseDeps, stream: AbstractAsyncContextManager[StreamedRunResult[BaseDeps, T]]
-) -> StreamedRunResult[BaseDeps, T]:
+    event_deps: EventDeps, stream: AbstractAsyncContextManager[StreamedRunResult[PydanticAIDeps, T]]
+) -> StreamedRunResult[PydanticAIDeps, T]:
     """Run the agent and produce `TaskEvent` stream into a channel inside the `deps`. Finally return a `StreamedRunResult`."""
-    await deps.event_send(
-        EventTaskRoot(
-            ctx=deps._event_parent, task_desc="run_agent_stream", task_args={}
+    await event_deps.event_send(
+        EventTaskStart(
+            ctx=event_deps._event_parent, task_desc="run_agent_stream", task_args={}
         )
     )
 
-    stream_span = deps._event_parent.spawn()
-    await deps.event_send(EventTaskOutputStream(ctx=stream_span, is_result=True))
+    stream_span = event_deps._event_parent.spawn()
+    await event_deps.event_send(EventTaskOutputStream(ctx=stream_span, is_result=True))
 
     async with stream as response:
         # Do streaming
         async for result in response.stream_text(delta=True):
-            await deps.event_send(
+            await event_deps.event_send(
                 EventTaskOutputStreamDelta(
                     ctx=stream_span.spawn(), task_output_delta=result, stopped=False
                 )
             )
-        await deps.event_send(
+        await event_deps.event_send(
             EventTaskOutputStreamDelta(
                 ctx=stream_span.spawn(), task_output_delta="", stopped=True
             )
@@ -88,11 +73,11 @@ async def prod_run_stream(
 
 
 async def prod_run(
-    deps: BaseDeps, run: Awaitable[AgentRunResult[T]]
+    deps: EventDeps, run: Awaitable[AgentRunResult[T]]
 ) -> AgentRunResult[T]:
     """Run the agent and produce `TaskEvent` stream into a channel inside the `deps`. Finally return a `AgentRunResult`."""
     await deps.event_send(
-        EventTaskRoot(ctx=deps._event_parent, task_desc="run_agent", task_args={})
+        EventTaskStart(ctx=deps._event_parent, task_desc="run_agent", task_args={})
     )
     # Run
     result = await run
@@ -104,17 +89,17 @@ P = ParamSpec("P")
 
 
 def with_events(
-    func: Callable[Concatenate[RunContext[BaseDeps], P], Awaitable[T]],
-) -> Callable[Concatenate[RunContext[BaseDeps], P], Awaitable[T]]:
+    func: Callable[Concatenate[RunContext[PydanticAIDeps], P], Awaitable[T]],
+) -> Callable[Concatenate[RunContext[PydanticAIDeps], P], Awaitable[T]]:
     """Decorator that wraps a function with event handling logic"""
 
     @wraps(func)
-    async def wrapper(ctx: RunContext[BaseDeps], *args: P.args, **kwargs: P.kwargs):
+    async def wrapper(ctx: RunContext[PydanticAIDeps], *args: P.args, **kwargs: P.kwargs):
         # Spawn root span
         new_ctx = fork_pydantic_ai_ctx(ctx)
-        await new_ctx.deps.event_send(
-            EventTaskRoot(
-                ctx=new_ctx.deps._event_parent,
+        await new_ctx.deps.event_deps.event_send(
+            EventTaskStart(
+                ctx=new_ctx.deps.event_deps._event_parent,
                 task_desc=func.__name__,
                 task_args={"args": args, "kwargs": kwargs},
             )
@@ -128,7 +113,7 @@ def with_events(
             result = func_call
 
         # Create and send output event
-        await new_ctx.deps.event_send(
+        await new_ctx.deps.event_deps.event_send(
             EventTaskOutput(task_output=result, is_result=True)
         )
         return result
@@ -137,9 +122,9 @@ def with_events(
 
 
 async def agent_run(
-    deps: BaseDeps,
+    deps: EventDeps,
     run: Awaitable[AgentRunResult[T]],
-) -> AsyncGenerator[TaskEvent | EndResult[AgentRunResult[T]], Any]:
+) -> AsyncGenerator[tuple[TaskEvent, bool] | EndResult[AgentRunResult[T]], Any]:
     """Start running the agent and yield events.
     It internally uses `prod_run` to run the agent which produces `TaskEvent` stream,
     and consuming the stream to yield events.
@@ -147,24 +132,24 @@ async def agent_run(
     if deps._event_being_consuming:
         raise RuntimeError("TaskEvent stream being consuming. Use run_stream instead.")
     deps._event_being_consuming = True
-    async for event in default_run(
-        deps._event_parent, deps._event_collector, lambda: prod_run(deps, run)
+    async for event in deps.run(
+        lambda: prod_run(deps, run)
     ):
-        yield event 
+        yield event
 
 
 async def agent_run_stream(
-    deps: BaseDeps,
-    stream: AbstractAsyncContextManager[StreamedRunResult[BaseDeps, T]],
-) -> AsyncGenerator[TaskEvent | EndResult[StreamedRunResult[BaseDeps, T]], Any]:
+    event_deps: EventDeps,
+    stream: AbstractAsyncContextManager[StreamedRunResult[PydanticAIDeps, T]],
+) -> AsyncGenerator[tuple[TaskEvent, bool] | EndResult[StreamedRunResult[PydanticAIDeps, T]], Any]:
     """Start running the agent and yield events.
     It internally uses `prod_run_stream` to run the agent which produces `TaskEvent` stream,
     and consuming the stream to yield events.
     """
-    if deps._event_being_consuming:
+    if event_deps._event_being_consuming:
         raise RuntimeError("TaskEvent stream being consuming. Use agent_run instead.")
-    deps._event_being_consuming = True
-    async for event in default_run(
-        deps._event_parent, deps._event_collector, lambda: prod_run_stream(deps, stream)
+    event_deps._event_being_consuming = True
+    async for event in event_deps.run(
+        lambda: prod_run_stream(event_deps, stream)
     ):
         yield event  
