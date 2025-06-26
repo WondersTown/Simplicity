@@ -43,6 +43,7 @@ class PardoEngine:
     summary_qa_llm: ModelWithSettings
     jina_search_client: JinaSearchClient
     jina_read_client: JinaReadClient
+    settings: Settings
 
     @classmethod
     def new(cls, settings: Settings, resource: Resource) -> Self:
@@ -60,7 +61,9 @@ class PardoEngine:
             summary_qa_llm=resource.llms[pardo_config.summary_qa_model_name],
             jina_search_client=resource.jina_search_client,
             jina_read_client=resource.jina_read_client,
+            settings=settings,
         )
+
 
     async def _single_qa(self, deps: EventDeps, query: str, source: str) -> str:
         SYSTEM_PROMPT = """
@@ -126,6 +129,7 @@ Ensure your response is well-structured, accurate, properly cited, and as inform
             query_search,
             num=9,
             timeout=15,
+            reader_concurrency=self.settings.jina_reader_concurrency,
         )
         await deps.event_send(EventTaskOutput(task_output=searched))
         SYSTEM_PROMPT = """

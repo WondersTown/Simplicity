@@ -28,6 +28,7 @@ class Settings(BaseModel):
     providers: dict[str, OAIProvider]
     llm_models: list[OAILLMModel]
     jina_api_key: str | None = None
+    jina_reader_concurrency: int  = 3
     engine_configs: dict[str, dict[str, Any]]
 
     @model_validator(mode="after")

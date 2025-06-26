@@ -169,7 +169,7 @@ logger = getLogger(__name__)
 
 @instrument
 async def search_with_read(
-    search_cli: JinaSearchClient, read_cli: JinaReadClient, query: str, num: int = 9, timeout: int = 15
+    search_cli: JinaSearchClient, read_cli: JinaReadClient, query: str, num: int = 9, timeout: int = 15, reader_concurrency: int = 3
 ) -> list[ReaderData]:
     try:
         search_l: list[SearchData] = []
@@ -183,7 +183,7 @@ async def search_with_read(
 
     read_l = await gather(
         *[read_cli.read(result.url, timeout) for result in search_l],
-        batch_size=3,
+        batch_size=reader_concurrency,
     )
     result_l: list[ReaderData] = []
     for searched, read in zip(search_l, read_l, strict=True):
