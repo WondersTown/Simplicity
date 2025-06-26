@@ -5,7 +5,7 @@
 groups = ["default", "demo", "dev"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:cbccd28b2fd1a3500b65661985184c5cf824f75f114960355d8397b42f3e9e1c"
+content_hash = "sha256:57abc78eff9efb9bdbaca8a9cc266417600534a01022b7a626bd0b8013438b15"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -375,6 +375,20 @@ files = [
 ]
 
 [[package]]
+name = "logfire"
+version = "3.21.1"
+extras = ["httpx"]
+summary = ""
+dependencies = [
+    "logfire==3.21.1",
+    "opentelemetry-instrumentation-httpx",
+]
+files = [
+    {file = "logfire-3.21.1-py3-none-any.whl", hash = "sha256:baecd3ec189e76c95775612a66ab23fe6d3fee53d5a4fa60dce42082370cdd4c"},
+    {file = "logfire-3.21.1.tar.gz", hash = "sha256:421b7741cfe3c02f2f0c91159a35312d3f3a4aa0d855af01c958d0e243472367"},
+]
+
+[[package]]
 name = "markdown-it-py"
 version = "3.0.0"
 summary = ""
@@ -540,6 +554,22 @@ files = [
 ]
 
 [[package]]
+name = "opentelemetry-instrumentation-httpx"
+version = "0.55b1"
+summary = ""
+dependencies = [
+    "opentelemetry-api",
+    "opentelemetry-instrumentation",
+    "opentelemetry-semantic-conventions",
+    "opentelemetry-util-http",
+    "wrapt",
+]
+files = [
+    {file = "opentelemetry_instrumentation_httpx-0.55b1-py3-none-any.whl", hash = "sha256:5fe22fcc3ad78a1da85cbd5d35d6acfb208521c164ad1dd75594230a266c6811"},
+    {file = "opentelemetry_instrumentation_httpx-0.55b1.tar.gz", hash = "sha256:3121a9196a25a72b65cb16188a1b09f61e365694c75534b306d09088e5f90041"},
+]
+
+[[package]]
 name = "opentelemetry-proto"
 version = "1.34.1"
 summary = ""
@@ -576,6 +606,15 @@ dependencies = [
 files = [
     {file = "opentelemetry_semantic_conventions-0.55b1-py3-none-any.whl", hash = "sha256:5da81dfdf7d52e3d37f8fe88d5e771e191de924cfff5f550ab0b8f7b2409baed"},
     {file = "opentelemetry_semantic_conventions-0.55b1.tar.gz", hash = "sha256:ef95b1f009159c28d7a7849f5cbc71c4c34c845bb514d66adfdf1b3fff3598b3"},
+]
+
+[[package]]
+name = "opentelemetry-util-http"
+version = "0.55b1"
+summary = ""
+files = [
+    {file = "opentelemetry_util_http-0.55b1-py3-none-any.whl", hash = "sha256:e134218df8ff010e111466650e5f019496b29c3b4f1b7de0e8ff8ebeafeebdf4"},
+    {file = "opentelemetry_util_http-0.55b1.tar.gz", hash = "sha256:29e119c1f6796cccf5fc2aedb55274435cde5976d0ac3fec3ca20a80118f821e"},
 ]
 
 [[package]]

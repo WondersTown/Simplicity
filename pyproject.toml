@@ -23,6 +23,7 @@ license = {text = "AGPL-3.0-or-later"}
 [project.optional-dependencies]
 demo = [
     "streamlit>=1.46.0",
+    "logfire[httpx]>=3.21.1",
 ]
 [build-system]
 requires = ["pdm-backend"]
@@ -62,7 +63,7 @@ known-first-party = ["simplicity"]
 [tool.pdm.scripts]
 fix = { shell = "python -m ruff check --fix && python -m ruff format" }
 check = { shell = 'python -m ruff check && python -m ruff format --check' }
-start = {shell = "python -m streamlit run src/simplicity-demo/chatbot.py"}
+start = {shell = "python -m streamlit run src/simplicity-demo/search_page.py"}
 [dependency-groups]
 dev = [
     "ruff>=0.12.0",
