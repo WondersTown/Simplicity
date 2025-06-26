@@ -129,10 +129,7 @@ async def agent_run(
     It internally uses `prod_run` to run the agent which produces `TaskEvent` stream,
     and consuming the stream to yield events.
     """
-    if deps._event_being_consuming:
-        raise RuntimeError("TaskEvent stream being consuming. Use run_stream instead.")
-    deps._event_being_consuming = True
-    async for event in deps.run(
+    async for event in deps.consume(
         lambda: prod_run(deps, run)
     ):
         yield event
@@ -146,10 +143,7 @@ async def agent_run_stream(
     It internally uses `prod_run_stream` to run the agent which produces `TaskEvent` stream,
     and consuming the stream to yield events.
     """
-    if event_deps._event_being_consuming:
-        raise RuntimeError("TaskEvent stream being consuming. Use agent_run instead.")
-    event_deps._event_being_consuming = True
-    async for event in event_deps.run(
+    async for event in event_deps.consume(
         lambda: prod_run_stream(event_deps, stream)
     ):
         yield event  

@@ -156,7 +156,7 @@ class EventDeps:
         another_deps._event_parent = self._event_parent.spawn()
         return another_deps
 
-    async def run(
+    async def consume(
         self,
         target: Callable[[], Awaitable[T]],
     ) -> AsyncGenerator[tuple[TaskEvent, bool] | EndResult[T], Any]:
@@ -168,6 +168,10 @@ class EventDeps:
         - `(event, False)` if the event is not part of the result
         - `EndResult[T]` if the task is finished
         """
+        if self._event_being_consuming:
+            raise RuntimeError("TaskEvent stream being consuming. Use agent_run instead.")
+        self._event_being_consuming = True
+
         stream_span: None | Context = None
         result: T  = None # type: ignore
         
