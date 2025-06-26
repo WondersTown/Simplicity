@@ -20,6 +20,10 @@ requires-python = ">=3.13"
 readme = "README.md"
 license = {text = "AGPL-3.0-or-later"}
 
+[project.optional-dependencies]
+demo = [
+    "streamlit>=1.46.0",
+]
 [build-system]
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
@@ -58,6 +62,7 @@ known-first-party = ["simplicity"]
 [tool.pdm.scripts]
 fix = { shell = "python -m ruff check --fix && python -m ruff format" }
 check = { shell = 'python -m ruff check && python -m ruff format --check' }
+start = {shell = "python -m streamlit run src/simplicity-demo/chatbot.py"}
 [dependency-groups]
 dev = [
     "ruff>=0.12.0",
