@@ -261,7 +261,7 @@ if 'search_language' not in st.session_state:
 
 def main():
     st.set_page_config(
-        page_title="Simplicity Search Engine",
+        page_title="Simplicity - Free and Open-Source Web Search Engine",
         page_icon="🔍",
         layout="wide",
         initial_sidebar_state="expanded"
@@ -271,7 +271,7 @@ def main():
     
     # Header
     st.title("🔍 Simplicity")
-    st.caption("LLM-driven web search engine")
+    st.markdown("#### Make everything simple instead of perplexing.")
     
     # Sidebar
     with st.sidebar:
