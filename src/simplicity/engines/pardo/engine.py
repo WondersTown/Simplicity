@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Self
+from typing import Literal, Self
 
 from pydantic import BaseModel
 from pydantic_ai.agent import Agent
@@ -25,7 +25,9 @@ from simplicity.resources import (
 from simplicity.settings import Settings
 
 
+
 class PardoEngineConfig(BaseModel):
+    engine: Literal["pardo"]
     translate_model_name: str
     single_qa_model_name: str
     summary_qa_model_name: str
@@ -37,22 +39,22 @@ class PardoEngine:
     single_qa_llm: ModelWithSettings
     summary_qa_llm: ModelWithSettings
     jina_client: JinaClient
-    settings: Settings
+    jina_reader_concurrency: int
 
     @classmethod
-    def new(cls, settings: Settings, resource: Resource) -> Self:
+    def new(cls, settings: Settings, resource: Resource, engine_config: str) -> Self:
         try:
             pardo_config = PardoEngineConfig.model_validate(
-                settings.engine_configs["pardo"]
+                settings.engine_configs[engine_config]
             )
         except KeyError:
             raise ValueError("Pardo engine config not found") from None
         return cls(
-            translate_llm=resource._llms[pardo_config.translate_model_name],
-            single_qa_llm=resource._llms[pardo_config.single_qa_model_name],
-            summary_qa_llm=resource._llms[pardo_config.summary_qa_model_name],
+            translate_llm=resource.get_llm(pardo_config.translate_model_name),
+            single_qa_llm=resource.get_llm(pardo_config.single_qa_model_name),
+            summary_qa_llm=resource.get_llm(pardo_config.summary_qa_model_name),
             jina_client=resource.jina_client,
-            settings=settings,
+            jina_reader_concurrency=settings.jina_reader_concurrency,
         )
 
     async def _single_qa(self, deps: TaskEventDeps, query: str, source: str) -> str:
@@ -121,7 +123,7 @@ Ensure your response is well-structured, accurate, properly cited, and as inform
             query_search,
             num=9,
             timeout=15,
-            reader_concurrency=self.settings.jina_reader_concurrency,
+            reader_concurrency=self.jina_reader_concurrency,
         )
         await deps.event_send(EventTaskOutput(task_output=searched))
         SYSTEM_PROMPT = """
@@ -178,7 +180,7 @@ if __name__ == "__main__":
     async def main():
         settings = get_settings_from_project_root()
         resource = Resource(settings)
-        engine = PardoEngine.new(settings, resource)
+        engine = PardoEngine.new(settings, resource, "pardo")
         cnt = 0
         event_deps = TaskEventDeps()
         async for event in event_deps.consume(

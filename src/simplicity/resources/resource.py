@@ -9,22 +9,13 @@ from simplicity.resources.pydantic_ai_llm import (
 )
 from simplicity.settings import Settings
 
+from dataclasses import dataclass, field
 
+
+@dataclass
 class Resource:
     settings: Settings
-    _llms: dict[str, ModelWithSettings]
-
-    def __init__(self, settings: Settings):
-        self.settings = settings
-        # Initialize all LLM models
-        self._llms = {
-            model_name: ModelWithSettings(
-                model=create_pydantic_ai_model(settings, model_name),
-                settings=model_config.settings,
-            )
-            for model_name, model_config in settings.llm_models_by_name.items()
-        }
-
+    _llms: dict[str, ModelWithSettings] = field(default_factory=dict)
     def get_llm(self, llm_name: str) -> ModelWithSettings:
         """
         Get an LLM model by name from the pre-initialized models.

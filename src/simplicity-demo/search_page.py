@@ -54,9 +54,12 @@ class AsyncLoopManager:
                 # Run until shutdown is requested
                 while not self._shutdown_event.is_set():
                     try:
-                        self._loop.run_until_complete(asyncio.sleep(0.1))
-                    except Exception:
-                        break
+                        self._loop.run_until_complete(asyncio.sleep(0.5))
+                    except Exception as e:
+                        # Log the exception but don't break immediately
+                        print(f"AsyncLoopManager exception: {e}")
+                        time.sleep(1.0)
+                        continue
             finally:
                 try:
                     # Cancel all pending tasks
@@ -93,7 +96,12 @@ class AsyncLoopManager:
             finally:
                 result_queue.put(("done", None))
 
-        asyncio.run_coroutine_threadsafe(collect_results(), loop)
+        try:
+            future = asyncio.run_coroutine_threadsafe(collect_results(), loop)
+            # Don't wait for completion here, let the main thread handle it
+        except Exception as e:
+            result_queue.put(("error", e))
+            result_queue.put(("done", None))
 
     def shutdown(self):
         """Shutdown the event loop and thread"""
@@ -106,25 +114,35 @@ class AsyncLoopManager:
 class SearchEngine:
     """Wrapper class to manage the search engine instance"""
 
-    def __init__(self):
+    def __init__(self, engine_config: str = "pardo"):
         self.engine: Optional[PardoEngine] = None
         self.initialized = False
+        self.engine_config = engine_config
+        self.settings = None
 
     async def initialize(self):
         """Initialize the search engine"""
         if not self.initialized:
             try:
-                settings = get_settings_from_project_root()
-                resource = Resource(settings)
-                self.engine = PardoEngine.new(settings, resource)
+                self.settings = get_settings_from_project_root()
+                resource = Resource(self.settings)
+                self.engine = PardoEngine.new(self.settings, resource, self.engine_config)
                 self.initialized = True
                 return True
             except Exception as e:
                 # Note: Can't use st.error here as we're in async context
                 raise RuntimeError(
-                    f"Failed to initialize search engine: {e!s}"
+                    f"Failed to initialize search engine with config '{self.engine_config}': {e!s}"
                 ) from None
         return True
+
+    async def reinitialize_with_config(self, engine_config: str):
+        """Reinitialize the search engine with a new config"""
+        if self.engine_config != engine_config:
+            self.engine_config = engine_config
+            self.initialized = False
+            self.engine = None
+            await self.initialize()
 
     async def search(self, query: str, search_lang: str = "English") -> AsyncGenerator:
         """Perform search and yield results"""
@@ -176,12 +194,17 @@ def run_search_with_ui_updates(
     thinking_count = 0
     sources_found = False
     final_result = ""
+    start_time = time.time()
+    max_timeout = 300  # 5 minutes maximum timeout
 
     try:
         while True:
+            # Check for overall timeout
+            if time.time() - start_time > max_timeout:
+                raise TimeoutError("Search operation timed out after 5 minutes")
             try:
                 # Get result with timeout to avoid blocking indefinitely
-                result_type, data = result_queue.get(timeout=0.1)
+                result_type, data = result_queue.get(timeout=1.0)
 
                 if result_type == "error":
                     raise data
@@ -207,7 +230,8 @@ def run_search_with_ui_updates(
                         # Thinking indicator
                         thinking_count += 1
                         with thinking_placeholder.container():
-                            st.info(f"🤔 Processing... (step {thinking_count})")
+                            st.info(f"🤔 Processing step {thinking_count}... (This may take a moment)")
+                            st.caption("The engine is analyzing sources and preparing your answer.")
 
                     elif isinstance(event_data, EventTaskOutput):
                         # Sources found
@@ -264,7 +288,12 @@ def run_search_with_ui_updates(
 
             except queue.Empty:
                 # No new results, continue waiting
-                time.sleep(0.1)
+                # Update the thinking indicator to show we're still processing
+                if thinking_count > 0:
+                    with thinking_placeholder.container():
+                        st.info(f"🤔 Processing step {thinking_count}... (This may take a moment)")
+                        st.caption("The engine is analyzing sources and preparing your answer.")
+                time.sleep(0.5)
                 continue
 
     except Exception as e:
@@ -282,6 +311,9 @@ if "current_search" not in st.session_state:
 
 if "search_language" not in st.session_state:
     st.session_state.search_language = "English"
+
+if "engine_config" not in st.session_state:
+    st.session_state.engine_config = "pardo"
 
 
 def main():
@@ -355,6 +387,43 @@ def main():
         if search_language and search_language != st.session_state.search_language:
             st.session_state.search_language = search_language
 
+        # Engine Configuration Selection
+        st.markdown("---")  # Add a separator
+        
+        # Load available engine configs
+        try:
+            settings = get_settings_from_project_root()
+            available_engine_configs = list(settings.engine_configs.keys())
+        except Exception as e:
+            st.error(f"Failed to load engine configurations: {e}")
+            available_engine_configs = ["pardo"]  # Fallback
+        
+        if not available_engine_configs:
+            available_engine_configs = ["pardo"]  # Fallback if empty
+            
+        # Find current index
+        try:
+            current_config_index = available_engine_configs.index(st.session_state.engine_config)
+        except ValueError:
+            current_config_index = 0  # Default to first available
+            st.session_state.engine_config = available_engine_configs[0]
+
+        selected_engine_config = st.selectbox(
+            "Engine Configuration",
+            options=available_engine_configs,
+            index=current_config_index,
+            help="Select the engine configuration to use for search processing",
+        )
+
+        # Update session state and reinitialize engine if config changes
+        if selected_engine_config != st.session_state.engine_config:
+            st.session_state.engine_config = selected_engine_config
+            # Reset the search engine to force reinitialization with new config
+            st.session_state.search_engine.engine_config = selected_engine_config
+            st.session_state.search_engine.initialized = False
+            st.session_state.search_engine.engine = None
+            st.success(f"Switched to engine configuration: {selected_engine_config}")
+
     # Main search interface
     query = st.text_input(
         "Enter your search query:",
@@ -389,8 +458,19 @@ def main():
                     result_placeholder,
                 )
             except Exception as e:
-                st.error(f"Failed to execute search: {e!s}")
-                st.exception(e)
+                thinking_placeholder.empty()
+                st.error(f"Search failed: {e!s}")
+                st.error("This might be due to:")
+                st.markdown("""
+                - Network connectivity issues
+                - API rate limits or authentication problems
+                - Engine configuration issues
+                - Temporary service unavailability
+                
+                Please try again in a few moments or check your configuration.
+                """)
+                if st.button("🔄 Retry Search"):
+                    st.rerun()
 
     # Examples section
     if not st.session_state.current_search:
