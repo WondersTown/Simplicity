@@ -18,6 +18,7 @@ from stone_brick.pydantic_ai_utils import (
 )
 
 from simplicity.common.auto_translate import auto_translate
+from simplicity.common.translate import translate
 from simplicity.resources import (
     JinaClient,
     ModelWithSettings,
@@ -27,7 +28,7 @@ from simplicity.settings import Settings
 
 
 class PardoEngineConfig(BaseModel):
-    engine: Literal["pardo"]
+    engine: Literal["pardo"] = "pardo"
     translate_model_name: str
     single_qa_model_name: str
     summary_qa_model_name: str
@@ -41,11 +42,14 @@ class PardoEngine:
     jina_client: JinaClient
 
     @classmethod
-    def new(cls, settings: Settings, resource: Resource, engine_config: str) -> Self:
+    def new(cls, settings: Settings, resource: Resource, engine_config: str | PardoEngineConfig) -> Self:
         try:
-            pardo_config = PardoEngineConfig.model_validate(
-                settings.engine_configs[engine_config]
-            )
+            if isinstance(engine_config, str):
+                pardo_config = PardoEngineConfig.model_validate(
+                    settings.engine_configs[engine_config]
+                )
+            else:
+                pardo_config = engine_config
         except KeyError:
             raise ValueError("Pardo engine config not found") from None
         return cls(
@@ -86,25 +90,7 @@ Ensure your response is well-structured, accurate, and as informative as possibl
         res = await prod_run(deps, run)
         return res.output
 
-    async def _translate(self, deps: TaskEventDeps, query: str, lang: str) -> str:
-        agent = Agent(
-            model=self.translate_llm.model,
-            model_settings=self.translate_llm.settings,
-            system_prompt="You are a professional translator. Provide only the translation wrapped by <result></result>, without any additional explanations or commentary. Preserve proper nouns, technical terms, and brand names in their original language. Maintain the original formatting and structure of the text.",
-            deps_type=PydanticAIDeps,
-        )
-        run = agent.run(
-            f"<text>\n{query}\n</text>\n<target_lang>{lang}</target_lang>",
-            deps=PydanticAIDeps(event_deps=deps),
-        )
-        res = await prod_run(deps, run)
-        res = res.output
-        if res.startswith("<result>"):
-            res = res[8:]  # Remove "<result>" from start
-        if res.endswith("</result>"):
-            res = res[:-9]  # Remove "</result>" from end
-        res = res.strip()
-        return res
+
 
     async def summary_qa(
         self,
@@ -118,7 +104,7 @@ Ensure your response is well-structured, accurate, and as informative as possibl
         elif search_lang == "auto":
             query_search = await auto_translate(deps.spawn(), self.translate_llm, query)
         else:
-            query_search = await self._translate(deps.spawn(), query, search_lang)
+            query_search = await translate(deps.spawn(), self.translate_llm, query, search_lang)
         searched = await self.jina_client.search_with_read(
             query_search,
             num=9,
@@ -179,13 +165,14 @@ if __name__ == "__main__":
     async def main():
         settings = get_settings_from_project_root()
         resource = Resource(settings)
-        engine = PardoEngine.new(settings, resource, "pardo")
+        engine = PardoEngine.new(settings, resource, "pardo-pro")
         cnt = 0
         event_deps = TaskEventDeps()
         async for event in event_deps.consume(
             lambda: engine.summary_qa(
                 event_deps,
                 "日本的首都是哪里?",
+                "日本语"
             )
         ):
             cnt += 1
