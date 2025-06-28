@@ -19,6 +19,7 @@ from stone_brick.pydantic_ai_utils import (
 
 from simplicity.common.auto_translate import auto_translate
 from simplicity.common.translate import translate
+from simplicity.engines.eden.engine import ReaderData
 from simplicity.resources import (
     JinaClient,
     ModelWithSettings,
@@ -42,7 +43,12 @@ class PardoEngine:
     jina_client: JinaClient
 
     @classmethod
-    def new(cls, settings: Settings, resource: Resource, engine_config: str | PardoEngineConfig) -> Self:
+    def new(
+        cls,
+        settings: Settings,
+        resource: Resource,
+        engine_config: str | PardoEngineConfig,
+    ) -> Self:
         try:
             if isinstance(engine_config, str):
                 pardo_config = PardoEngineConfig.model_validate(
@@ -90,7 +96,27 @@ Ensure your response is well-structured, accurate, and as informative as possibl
         res = await prod_run(deps, run)
         return res.output
 
-
+    async def _search(
+        self,
+        deps: TaskEventDeps,
+        query: str,
+        search_lang: str | Literal["auto"] | None = "auto",
+    ):
+        if search_lang is None:
+            query_search = query
+        elif search_lang == "auto":
+            query_search = await auto_translate(deps.spawn(), self.translate_llm, query)
+        else:
+            query_search = await translate(
+                deps.spawn(), self.translate_llm, query, search_lang
+            )
+        searched = await self.jina_client.search_with_read(
+            query_search,
+            num=9,
+            timeout=15,
+        )
+        await deps.event_send(EventTaskOutput(task_output=searched))
+        return searched
 
     async def summary_qa(
         self,
@@ -99,18 +125,39 @@ Ensure your response is well-structured, accurate, and as informative as possibl
         search_lang: str | Literal["auto"] | None = "auto",
     ):
         deps = deps or TaskEventDeps()
-        if search_lang is None:
-            query_search = query
-        elif search_lang == "auto":
-            query_search = await auto_translate(deps.spawn(), self.translate_llm, query)
-        else:
-            query_search = await translate(deps.spawn(), self.translate_llm, query, search_lang)
-        searched = await self.jina_client.search_with_read(
-            query_search,
-            num=9,
-            timeout=15,
+        read = await self._search(deps.spawn(), query, search_lang)
+        contexts = await self._map_reduce_qa(
+            deps.spawn(), query, {str(x.id_): x for x in read}
         )
-        await deps.event_send(EventTaskOutput(task_output=searched))
+        return await self.summary_qa_without_search(deps, query, contexts)
+
+    async def _map_reduce_qa(
+        self, deps: TaskEventDeps, query: str, contexts: dict[str, ReaderData]
+    ):
+        idx_contexts = list(contexts.values())
+        answers = await instrument(gather)(
+            *[self._single_qa(deps.spawn(), query, x.content) for x in idx_contexts],
+        )
+        answers = [
+            (
+                ("published at " + idx_contexts[idx].publishedTime.isoformat() + "\n\n")  # type: ignore
+                if idx_contexts[idx].publishedTime
+                else ""
+            )
+            + x
+            for idx, x in enumerate(answers)
+            if not isinstance(x, Exception)
+        ]
+
+        return [f"{idx + 1}.\n```\n{x}\n```" for idx, x in enumerate(answers)]
+
+    async def summary_qa_without_search(
+        self,
+        deps: TaskEventDeps | None,
+        query: str,
+        contexts: list[str],
+    ):
+        deps = deps or TaskEventDeps()
         SYSTEM_PROMPT = """
 You are a helpful research assistant that provides accurate answers based on the given information sources.
 
@@ -123,24 +170,7 @@ Instructions:
 
 Ensure your response is well-structured, accurate, properly cited, and as informative as possible by including relevant details from the sources.
 """
-        answers = await instrument(gather)(
-            *[self._single_qa(deps.spawn(), query, x.content) for x in searched],
-        )
-        answers = [
-            (
-                ("published at " + searched[idx].publishedTime.isoformat() + "\n\n")  # type: ignore
-                if searched[idx].publishedTime
-                else ""
-            )
-            + x
-            for idx, x in enumerate(answers)
-            if not isinstance(x, Exception)
-        ]
-
-        texts_for_llm = "\n".join(
-            [f"{idx + 1}.\n```\n{x}\n```" for idx, x in enumerate(answers)]
-        )
-        user_prompt = f"<informations>\n\n{texts_for_llm}\n\n</informations>\n\n<query>\n\n{query}\n\n</query>"
+        user_prompt = f"<informations>\n\n{contexts}\n\n</informations>\n\n<query>\n\n{query}\n\n</query>"
         agent = Agent(
             model=self.summary_qa_llm.model,
             model_settings=self.summary_qa_llm.settings,
@@ -169,11 +199,7 @@ if __name__ == "__main__":
         cnt = 0
         event_deps = TaskEventDeps()
         async for event in event_deps.consume(
-            lambda: engine.summary_qa(
-                event_deps,
-                "日本的首都是哪里?",
-                "日本语"
-            )
+            lambda: engine.summary_qa(event_deps, "日本的首都是哪里?", "日本语")
         ):
             cnt += 1
             if not isinstance(event, EndResult):
