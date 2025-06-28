@@ -3,13 +3,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from logging import getLogger
 from typing import Annotated, Literal
+from uuid import uuid4
 
 from httpx import AsyncClient, HTTPStatusError
 from pydantic import BaseModel, Field, field_validator
 from stone_brick.asynclib import gather
 from stone_brick.observability import instrument
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random
-from uuid import uuid4, UUID
 
 logger = getLogger(__name__)
 
@@ -23,11 +23,14 @@ class JinaMeta(BaseModel):
 
 
 class SearchData(BaseModel):
-    id_: str = Field(default_factory=lambda: uuid4().hex)
+    id_: str = Field(default_factory=lambda: str(uuid4())[:6])
     title: str
     url: str
     description: str
     usage: JinaUsage
+
+    def llm_dump(self) -> dict:
+        return self.model_dump(exclude={"usage", "url"})
 
 
 class SearchResponse(BaseModel):
@@ -38,7 +41,7 @@ class SearchResponse(BaseModel):
 
 # Pydantic models for the Jina Reader API response
 class ReaderData(BaseModel):
-    id_: str = Field(default_factory=lambda: uuid4().hex)
+    id_: str = Field(default_factory=lambda: str(uuid4())[:6])
     title: str
     url: str
     description: str
@@ -67,6 +70,9 @@ class ReaderData(BaseModel):
                     return None
 
         return v
+
+    def llm_dump(self) -> dict:
+        return self.model_dump(exclude={"usage", "images", "links", "url"})
 
 
 class ReaderResponse(BaseModel):
@@ -122,7 +128,7 @@ class JinaClient:
         wait=wait_random(),
         retry=retry_if_exception_type(HTTPStatusError),
     )
-    async def read(self, target_url: str, timeout: int = 15) -> ReaderResponse:
+    async def read(self, target: str | SearchData, timeout: int = 15) -> ReaderResponse:
         """
         Reads the content of a given URL using the Jina Reader API.
 
@@ -145,6 +151,7 @@ class JinaClient:
             "X-Timeout": str(timeout),
         }
 
+        target_url = target.url if isinstance(target, SearchData) else target
         response = await self.client.get(
             url=f"https://r.jina.ai/{target_url}", headers=headers, timeout=timeout + 10
         )
@@ -153,7 +160,22 @@ class JinaClient:
 
         res = ReaderResponse.model_validate(response.json())
         res.data.content = clean_md_links(res.data.content)
+
+        if isinstance(target, SearchData):
+            res.data.id_ = target.id_
+            res.data.title = target.title
+            res.data.description = target.description
+            res.data.url = target.url
         return res
+
+    @instrument
+    async def read_batch(
+        self, targets: list[str | SearchData], timeout: int = 15
+    ) -> list[ReaderResponse | Exception]:
+        return await gather(
+            *[self.read(target, timeout) for target in targets],
+            batch_size=self.concurrency,
+        )
 
     @instrument
     async def search_with_read(
@@ -170,7 +192,7 @@ class JinaClient:
             raise RuntimeError(f"Failed to search using Jina: {e}") from e
 
         read_l = await gather(
-            *[self.read(result.url, timeout) for result in search_l],
+            *[self.read(result, timeout) for result in search_l],
             batch_size=self.concurrency,
         )
         result_l: list[ReaderData] = []
