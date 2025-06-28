@@ -42,7 +42,6 @@ DO split when:
 )
 
 
-@instrument
 async def splitting_question(deps: TaskEventDeps, model: ModelWithSettings, query: str):
     run = agent.run(
         model=model.model,
