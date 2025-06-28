@@ -5,7 +5,7 @@
 groups = ["default", "demo", "dev"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:57abc78eff9efb9bdbaca8a9cc266417600534a01022b7a626bd0b8013438b15"
+content_hash = "sha256:edf2cf640fe9e2e6849f70d9ea7c8c83db2d20fbf2367d4f9fe7d8893039b0fa"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -143,6 +143,15 @@ summary = ""
 files = [
     {file = "eval_type_backport-0.2.2-py3-none-any.whl", hash = "sha256:cb6ad7c393517f476f96d456d0412ea80f0a8cf96f6892834cd9340149111b0a"},
     {file = "eval_type_backport-0.2.2.tar.gz", hash = "sha256:f0576b4cf01ebb5bd358d02314d31846af5e07678387486e2c798af0e7d849c1"},
+]
+
+[[package]]
+name = "exceptiongroup"
+version = "1.3.0"
+summary = ""
+files = [
+    {file = "exceptiongroup-1.3.0-py3-none-any.whl", hash = "sha256:4d111e6e0c13d0644cad6ddaa7ed0261a0b36971f6d23e7ec9b4b9097da78a10"},
+    {file = "exceptiongroup-1.3.0.tar.gz", hash = "sha256:b241f5885f560bc56a59ee63ca4c6a8bfa46ae4ad651af316d4e81817bb9fd88"},
 ]
 
 [[package]]
@@ -740,7 +749,7 @@ files = [
 
 [[package]]
 name = "pydantic-ai-slim"
-version = "0.3.2"
+version = "0.3.4"
 summary = ""
 dependencies = [
     "eval-type-backport",
@@ -752,22 +761,22 @@ dependencies = [
     "typing-inspection",
 ]
 files = [
-    {file = "pydantic_ai_slim-0.3.2-py3-none-any.whl", hash = "sha256:c409f00de1921cb610cab46f07a7b55b0632be7b8b87e3609573b47c07cb5ef1"},
-    {file = "pydantic_ai_slim-0.3.2.tar.gz", hash = "sha256:90f1e6d95d0bbffbca118619b3b3e0f16c5c2c281e4c8c2ec66467b8e8615621"},
+    {file = "pydantic_ai_slim-0.3.4-py3-none-any.whl", hash = "sha256:e077e6735021534a6752f95ad35b21bd61c448b353ecb520e81a2428dcd58e88"},
+    {file = "pydantic_ai_slim-0.3.4.tar.gz", hash = "sha256:f25fd8798ecc9f928d251b2b38d777c22684aa2e89d459fd64cc2a0b5ecb0fed"},
 ]
 
 [[package]]
 name = "pydantic-ai-slim"
-version = "0.3.2"
+version = "0.3.4"
 extras = ["openai"]
 summary = ""
 dependencies = [
     "openai",
-    "pydantic-ai-slim==0.3.2",
+    "pydantic-ai-slim==0.3.4",
 ]
 files = [
-    {file = "pydantic_ai_slim-0.3.2-py3-none-any.whl", hash = "sha256:c409f00de1921cb610cab46f07a7b55b0632be7b8b87e3609573b47c07cb5ef1"},
-    {file = "pydantic_ai_slim-0.3.2.tar.gz", hash = "sha256:90f1e6d95d0bbffbca118619b3b3e0f16c5c2c281e4c8c2ec66467b8e8615621"},
+    {file = "pydantic_ai_slim-0.3.4-py3-none-any.whl", hash = "sha256:e077e6735021534a6752f95ad35b21bd61c448b353ecb520e81a2428dcd58e88"},
+    {file = "pydantic_ai_slim-0.3.4.tar.gz", hash = "sha256:f25fd8798ecc9f928d251b2b38d777c22684aa2e89d459fd64cc2a0b5ecb0fed"},
 ]
 
 [[package]]
@@ -800,7 +809,7 @@ files = [
 
 [[package]]
 name = "pydantic-graph"
-version = "0.3.2"
+version = "0.3.4"
 summary = ""
 dependencies = [
     "httpx",
@@ -809,8 +818,8 @@ dependencies = [
     "typing-inspection",
 ]
 files = [
-    {file = "pydantic_graph-0.3.2-py3-none-any.whl", hash = "sha256:efab29d7f201ad7a199acd94bb4d8accd70cc756e4030c069ac0d1048cb543a2"},
-    {file = "pydantic_graph-0.3.2.tar.gz", hash = "sha256:874b06d6484499e391a2f799bb3b5399420e5d786087012a8716a398bfc3aeec"},
+    {file = "pydantic_graph-0.3.4-py3-none-any.whl", hash = "sha256:885cb157975647e3c7aa7be49603fda9d072607c08dce2f0ba3f16f9a2069bfc"},
+    {file = "pydantic_graph-0.3.4.tar.gz", hash = "sha256:1172dccd8bfcc742f4eb52aa4199daa3cdb6446e726fb6960667d49a02c4df02"},
 ]
 
 [[package]]
@@ -1009,11 +1018,69 @@ files = [
 
 [[package]]
 name = "stone-brick-toolkit"
-version = "0.8.0"
+version = "0.9.0"
 summary = ""
 files = [
-    {file = "stone_brick_toolkit-0.8.0-py3-none-any.whl", hash = "sha256:17e00db275c3866fd05423c51d069a11cf90c0bbe1cd5ad8cd8ac7de349cf837"},
-    {file = "stone_brick_toolkit-0.8.0.tar.gz", hash = "sha256:48379242255e9d0f22507ef263666d05fe2e09689746b354b016561105ffe083"},
+    {file = "stone_brick_toolkit-0.9.0-py3-none-any.whl", hash = "sha256:476e8de58cac7c12d48f206a351d04b211c37eab8731b303391d6ed34be89f0e"},
+    {file = "stone_brick_toolkit-0.9.0.tar.gz", hash = "sha256:1d9a22388bee87a88aff4ebb45b7a32689ca29f07921f98008e8eb719c64eba4"},
+]
+
+[[package]]
+name = "stone-brick-toolkit"
+version = "0.9.0"
+extras = ["llm"]
+summary = ""
+dependencies = [
+    "exceptiongroup",
+    "openai",
+    "stone-brick-toolkit==0.9.0",
+    "tenacity",
+]
+files = [
+    {file = "stone_brick_toolkit-0.9.0-py3-none-any.whl", hash = "sha256:476e8de58cac7c12d48f206a351d04b211c37eab8731b303391d6ed34be89f0e"},
+    {file = "stone_brick_toolkit-0.9.0.tar.gz", hash = "sha256:1d9a22388bee87a88aff4ebb45b7a32689ca29f07921f98008e8eb719c64eba4"},
+]
+
+[[package]]
+name = "stone-brick-toolkit"
+version = "0.9.0"
+extras = ["observability"]
+summary = ""
+dependencies = [
+    "opentelemetry-api",
+    "stone-brick-toolkit==0.9.0",
+]
+files = [
+    {file = "stone_brick_toolkit-0.9.0-py3-none-any.whl", hash = "sha256:476e8de58cac7c12d48f206a351d04b211c37eab8731b303391d6ed34be89f0e"},
+    {file = "stone_brick_toolkit-0.9.0.tar.gz", hash = "sha256:1d9a22388bee87a88aff4ebb45b7a32689ca29f07921f98008e8eb719c64eba4"},
+]
+
+[[package]]
+name = "stone-brick-toolkit"
+version = "0.9.0"
+extras = ["pydantic-ai"]
+summary = ""
+dependencies = [
+    "pydantic-ai-slim",
+    "stone-brick-toolkit==0.9.0",
+]
+files = [
+    {file = "stone_brick_toolkit-0.9.0-py3-none-any.whl", hash = "sha256:476e8de58cac7c12d48f206a351d04b211c37eab8731b303391d6ed34be89f0e"},
+    {file = "stone_brick_toolkit-0.9.0.tar.gz", hash = "sha256:1d9a22388bee87a88aff4ebb45b7a32689ca29f07921f98008e8eb719c64eba4"},
+]
+
+[[package]]
+name = "stone-brick-toolkit"
+version = "0.9.0"
+extras = ["retry"]
+summary = ""
+dependencies = [
+    "stone-brick-toolkit==0.9.0",
+    "tenacity",
+]
+files = [
+    {file = "stone_brick_toolkit-0.9.0-py3-none-any.whl", hash = "sha256:476e8de58cac7c12d48f206a351d04b211c37eab8731b303391d6ed34be89f0e"},
+    {file = "stone_brick_toolkit-0.9.0.tar.gz", hash = "sha256:1d9a22388bee87a88aff4ebb45b7a32689ca29f07921f98008e8eb719c64eba4"},
 ]
 
 [[package]]

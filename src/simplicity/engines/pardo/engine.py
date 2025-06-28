@@ -3,31 +3,26 @@ from typing import Self
 
 from pydantic import BaseModel
 from pydantic_ai.agent import Agent
-
-from simplicity.resources import (
-    JinaReadClient,
-    JinaSearchClient,
-    ModelWithSettings,
-    Resource,
-    search_with_read,
-)
-from simplicity.settings import Settings
-from simplicity.common.event import (
-    Event,
-    print_event,
+from stone_brick.asynclib import gather
+from stone_brick.llm import (
     EndResult,
     EventTaskOutput,
-    EventDeps,
-)
-from simplicity._pydantic_ai_adapter.agent_utils import (
-    agent_run,
-    prod_run,
-    prod_run_stream,
-    agent_run_stream,
-    PydanticAIDeps,
+    TaskEventDeps,
+    print_task_event,
 )
 from stone_brick.observability import instrument
-from stone_brick.asynclib import gather
+from stone_brick.pydantic_ai_utils import (
+    PydanticAIDeps,
+    prod_run,
+    prod_run_stream,
+)
+
+from simplicity.resources import (
+    JinaClient,
+    ModelWithSettings,
+    Resource,
+)
+from simplicity.settings import Settings
 
 
 class PardoEngineConfig(BaseModel):
@@ -41,8 +36,7 @@ class PardoEngine:
     translate_llm: ModelWithSettings
     single_qa_llm: ModelWithSettings
     summary_qa_llm: ModelWithSettings
-    jina_search_client: JinaSearchClient
-    jina_read_client: JinaReadClient
+    jina_client: JinaClient
     settings: Settings
 
     @classmethod
@@ -53,19 +47,15 @@ class PardoEngine:
             )
         except KeyError:
             raise ValueError("Pardo engine config not found") from None
-        if resource.jina_search_client is None or resource.jina_read_client is None:
-            raise ValueError("Required Jina clients not found") from None
         return cls(
-            translate_llm=resource.llms[pardo_config.translate_model_name],
-            single_qa_llm=resource.llms[pardo_config.single_qa_model_name],
-            summary_qa_llm=resource.llms[pardo_config.summary_qa_model_name],
-            jina_search_client=resource.jina_search_client,
-            jina_read_client=resource.jina_read_client,
+            translate_llm=resource._llms[pardo_config.translate_model_name],
+            single_qa_llm=resource._llms[pardo_config.single_qa_model_name],
+            summary_qa_llm=resource._llms[pardo_config.summary_qa_model_name],
+            jina_client=resource.jina_client,
             settings=settings,
         )
 
-
-    async def _single_qa(self, deps: EventDeps, query: str, source: str) -> str:
+    async def _single_qa(self, deps: TaskEventDeps, query: str, source: str) -> str:
         SYSTEM_PROMPT = """
 You are a helpful research assistant that provides accurate answers based on the given information sources.
 
@@ -96,7 +86,7 @@ Ensure your response is well-structured, accurate, properly cited, and as inform
         res = await prod_run(deps, run)
         return res.output
 
-    async def _translate(self, deps: EventDeps, query: str, lang: str) -> str:
+    async def _translate(self, deps: TaskEventDeps, query: str, lang: str) -> str:
         agent = Agent(
             model=self.translate_llm.model,
             model_settings=self.translate_llm.settings,
@@ -104,7 +94,8 @@ Ensure your response is well-structured, accurate, properly cited, and as inform
             deps_type=PydanticAIDeps,
         )
         run = agent.run(
-            f"<text>\n{query}\n</text>\n<target_lang>{lang}</target_lang>", deps=PydanticAIDeps(event_deps=deps)
+            f"<text>\n{query}\n</text>\n<target_lang>{lang}</target_lang>",
+            deps=PydanticAIDeps(event_deps=deps),
         )
         res = await prod_run(deps, run)
         res = res.output
@@ -116,16 +107,17 @@ Ensure your response is well-structured, accurate, properly cited, and as inform
         return res
 
     async def summary_qa(
-        self, deps: EventDeps | None, query: str, search_lang: str | None = "English"
+        self,
+        deps: TaskEventDeps | None,
+        query: str,
+        search_lang: str | None = "English",
     ):
-        deps = deps or EventDeps()
+        deps = deps or TaskEventDeps()
         if search_lang is not None:
             query_search = await self._translate(deps.spawn(), query, search_lang)
         else:
             query_search = query
-        searched = await search_with_read(
-            self.jina_search_client,
-            self.jina_read_client,
+        searched = await self.jina_client.search_with_read(
             query_search,
             num=9,
             timeout=15,
@@ -178,8 +170,9 @@ Ensure your response is well-structured, accurate, properly cited, and as inform
 
 if __name__ == "__main__":
     from anyio import run
-    from simplicity.settings import Settings
+
     from simplicity.resources import Resource
+    from simplicity.settings import Settings
     from simplicity.utils import get_settings_from_project_root
 
     async def main():
@@ -187,7 +180,7 @@ if __name__ == "__main__":
         resource = Resource(settings)
         engine = PardoEngine.new(settings, resource)
         cnt = 0
-        event_deps = EventDeps()
+        event_deps = TaskEventDeps()
         async for event in event_deps.consume(
             lambda: engine.summary_qa(
                 event_deps,
@@ -198,9 +191,9 @@ if __name__ == "__main__":
             cnt += 1
             if not isinstance(event, EndResult):
                 if event[1]:
-                    print_event(event[0])
+                    print_task_event(event[0])
                 else:
                     print(f"thinking: {cnt}")
-                    print_event(event[0])
+                    print_task_event(event[0])
 
     run(main)

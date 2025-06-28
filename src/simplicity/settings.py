@@ -1,7 +1,7 @@
 from functools import cached_property
 from typing import Any, Self
 
-from pydantic import BaseModel, ConfigDict, model_validator, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.settings import ModelSettings
 
@@ -28,7 +28,7 @@ class Settings(BaseModel):
     providers: dict[str, OAIProvider]
     llm_models: list[OAILLMModel]
     jina_api_key: str | None = None
-    jina_reader_concurrency: int  = 3
+    jina_reader_concurrency: int = 3
     engine_configs: dict[str, dict[str, Any]]
 
     @model_validator(mode="after")
