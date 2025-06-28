@@ -65,7 +65,7 @@ Instructions:
 1. Answer the user's query using ONLY the information provided in the sources below
 2. If the information sources are in different languages, respond in the same language as the user's query
 
-Ensure your response is well-structured, accurate, properly cited, and as informative as possible by including relevant details from the sources.
+Ensure your response is well-structured, accurate, and as informative as possible by including relevant details from the sources.
 """
 
         user_prompt = f"""

@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 from stone_brick.asynclib import gather
 from stone_brick.observability import instrument
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random
+from uuid import uuid4, UUID
 
 logger = getLogger(__name__)
 
@@ -22,6 +23,7 @@ class JinaMeta(BaseModel):
 
 
 class SearchData(BaseModel):
+    id_: str = Field(default_factory=lambda: uuid4().hex)
     title: str
     url: str
     description: str
@@ -36,6 +38,7 @@ class SearchResponse(BaseModel):
 
 # Pydantic models for the Jina Reader API response
 class ReaderData(BaseModel):
+    id_: str = Field(default_factory=lambda: uuid4().hex)
     title: str
     url: str
     description: str
@@ -182,6 +185,7 @@ class JinaClient:
                         exc_info=True,
                     )
             else:
+                read.data.id_ = searched.id_
                 result_l.append(read.data)
 
         return result_l
