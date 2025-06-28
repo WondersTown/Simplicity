@@ -58,8 +58,7 @@ Rules:
     output_type=Output,
 )
 
-
-async def auto_translate(deps: TaskEventDeps, model: ModelWithSettings, query: str):
+async def _auto_translate(deps: TaskEventDeps, model: ModelWithSettings, query: str):
     run = agent.run(
         model=model.model,
         model_settings=model.settings,
@@ -70,6 +69,11 @@ async def auto_translate(deps: TaskEventDeps, model: ModelWithSettings, query: s
     res = await prod_run(deps, run)
     res = res.output
     return res
+
+
+async def auto_translate(deps: TaskEventDeps, model: ModelWithSettings, query: str):
+    res = await _auto_translate(deps, model, query)
+    return res.translated_query
 
 
 if __name__ == "__main__":
@@ -116,7 +120,7 @@ if __name__ == "__main__":
     async def main():
         # Run all translations in parallel
         results = await gather(
-            *[auto_translate(TaskEventDeps(), model, query) for query, _ in tasks],
+            *[_auto_translate(TaskEventDeps(), model, query) for query, _ in tasks],
             batch_size=5,
         )
 
