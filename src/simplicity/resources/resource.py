@@ -49,7 +49,7 @@ class Resource:
         if not self.settings.jina_api_key:
             raise ValueError("Jina API key is not set")
 
-        return JinaClient(api_key=self.settings.jina_api_key, client=self.http_client)
+        return JinaClient(api_key=self.settings.jina_api_key, client=self.http_client, concurrency=self.settings.jina_reader_concurrency)
 
     async def close(self):
         """Close the HTTP client when done."""

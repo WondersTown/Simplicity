@@ -97,6 +97,7 @@ def clean_md_links(content: str) -> str:
 class JinaClient:
     api_key: str
     client: AsyncClient
+    concurrency: int
 
     @retry(
         stop=stop_after_attempt(3),
@@ -156,7 +157,7 @@ class JinaClient:
 
     @instrument
     async def search_with_read(
-        self, query: str, num: int = 9, timeout: int = 15, reader_concurrency: int = 3
+        self, query: str, num: int = 9, timeout: int = 15
     ) -> list[ReaderData]:
         try:
             search_l: list[SearchData] = []
@@ -170,7 +171,7 @@ class JinaClient:
 
         read_l = await gather(
             *[self.read(result.url, timeout) for result in search_l],
-            batch_size=reader_concurrency,
+            batch_size=self.concurrency,
         )
         result_l: list[ReaderData] = []
         for searched, read in zip(search_l, read_l, strict=True):
