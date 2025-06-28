@@ -17,13 +17,13 @@ from stone_brick.pydantic_ai_utils import (
     prod_run_stream,
 )
 
+from simplicity.common.auto_translate import auto_translate
 from simplicity.resources import (
     JinaClient,
     ModelWithSettings,
     Resource,
 )
 from simplicity.settings import Settings
-
 
 
 class PardoEngineConfig(BaseModel):
@@ -110,13 +110,15 @@ Ensure your response is well-structured, accurate, and as informative as possibl
         self,
         deps: TaskEventDeps | None,
         query: str,
-        search_lang: str | None = "English",
+        search_lang: str | Literal["auto"] | None = "auto",
     ):
         deps = deps or TaskEventDeps()
-        if search_lang is not None:
-            query_search = await self._translate(deps.spawn(), query, search_lang)
-        else:
+        if search_lang is None:
             query_search = query
+        elif search_lang == "auto":
+            query_search = await auto_translate(deps.spawn(), self.translate_llm, query)
+        else:
+            query_search = await self._translate(deps.spawn(), query, search_lang)
         searched = await self.jina_client.search_with_read(
             query_search,
             num=9,
@@ -184,7 +186,6 @@ if __name__ == "__main__":
             lambda: engine.summary_qa(
                 event_deps,
                 "日本的首都是哪里?",
-                "English",
             )
         ):
             cnt += 1
