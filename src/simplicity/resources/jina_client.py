@@ -1,5 +1,6 @@
 import re
-from dataclasses import dataclass
+from asyncio import Semaphore
+from dataclasses import dataclass, field
 from datetime import datetime
 from logging import getLogger
 from typing import Annotated, Literal
@@ -104,6 +105,10 @@ class JinaClient:
     api_key: str
     client: AsyncClient
     concurrency: int
+    _semaphore: Semaphore = field(init=False)
+
+    def __post_init__(self):
+        self._semaphore = Semaphore(self.concurrency)
 
     @retry(
         stop=stop_after_attempt(3),
@@ -152,9 +157,12 @@ class JinaClient:
         }
 
         target_url = target.url if isinstance(target, SearchData) else target
-        response = await self.client.get(
-            url=f"https://r.jina.ai/{target_url}", headers=headers, timeout=timeout + 10
-        )
+        async with self._semaphore:
+            response = await self.client.get(
+                url=f"https://r.jina.ai/{target_url}",
+                headers=headers,
+                timeout=timeout + 10,
+            )
 
         response.raise_for_status()
 
@@ -174,7 +182,6 @@ class JinaClient:
     ) -> list[ReaderResponse | Exception]:
         return await gather(
             *[self.read(target, timeout) for target in targets],
-            batch_size=self.concurrency,
         )
 
     @instrument
@@ -193,7 +200,6 @@ class JinaClient:
 
         read_l = await gather(
             *[self.read(result, timeout) for result in search_l],
-            batch_size=self.concurrency,
         )
         result_l: list[ReaderData] = []
         for searched, read in zip(search_l, read_l, strict=True):
