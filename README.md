@@ -1,6 +1,8 @@
-# Simplicity
+# 🔍Simplicity
 
-🔍 A free and open-source web search engine that makes everything simple instead of perplexing.
+**The free and open-source web search engine makes everything simple instead of perplexing.**
+
+
 ![image](https://github.com/user-attachments/assets/33e56dd4-dcc3-4412-8332-eb4fd6f72cc1)
 
 ## Features
