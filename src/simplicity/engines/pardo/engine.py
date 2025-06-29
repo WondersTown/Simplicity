@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Literal, Self
 
 from pydantic import BaseModel
-from pydantic_ai.agent import Agent
 from stone_brick.asynclib import gather
 from stone_brick.llm import (
     EndResult,
@@ -11,13 +10,10 @@ from stone_brick.llm import (
     print_task_event,
 )
 from stone_brick.observability import instrument
-from stone_brick.pydantic_ai_utils import (
-    PydanticAIDeps,
-    prod_run,
-    prod_run_stream,
-)
 
 from simplicity.common.auto_translate import auto_translate
+from simplicity.common.context_qa import context_qa
+from simplicity.common.single_qa import single_qa
 from simplicity.common.translate import translate
 from simplicity.engines.eden.engine import ReaderData
 from simplicity.resources import (
@@ -65,37 +61,6 @@ class PardoEngine:
             jina_client=resource.jina_client,
         )
 
-    async def _single_qa(self, deps: TaskEventDeps, query: str, source: str) -> str:
-        SYSTEM_PROMPT = """
-You are a helpful research assistant that provides accurate answers based on the given information sources.
-
-Instructions:
-1. Answer the user's query using ONLY the information provided in the sources below
-2. If the information sources are in different languages, respond in the same language as the user's query
-
-Ensure your response is well-structured, accurate, and as informative as possible by including relevant details from the sources.
-"""
-
-        user_prompt = f"""
-<source>
-{source}
-</source>
-<query>
-{query}
-</query>"""
-        agent = Agent(
-            model=self.single_qa_llm.model,
-            model_settings=self.single_qa_llm.settings,
-            system_prompt=SYSTEM_PROMPT,
-            deps_type=PydanticAIDeps,
-        )
-        run = agent.run(
-            user_prompt,
-            deps=PydanticAIDeps(event_deps=deps),
-        )
-        res = await prod_run(deps, run)
-        return res.output
-
     async def _search(
         self,
         deps: TaskEventDeps,
@@ -129,14 +94,14 @@ Ensure your response is well-structured, accurate, and as informative as possibl
         contexts = await self._map_reduce_qa(
             deps.spawn(), query, {str(x.id_): x for x in read}
         )
-        return await self.summary_qa_without_search(deps, query, contexts)
+        return await context_qa(deps, self.summary_qa_llm, query, contexts)
 
     async def _map_reduce_qa(
         self, deps: TaskEventDeps, query: str, contexts: dict[str, ReaderData]
     ):
         idx_contexts = list(contexts.values())
         answers = await instrument(gather)(
-            *[self._single_qa(deps.spawn(), query, x.content) for x in idx_contexts],
+            *[single_qa(deps.spawn(), self.single_qa_llm, query, x.content) for x in idx_contexts],
         )
         answers = [
             (
@@ -150,39 +115,6 @@ Ensure your response is well-structured, accurate, and as informative as possibl
         ]
 
         return [f"{idx + 1}.\n```\n{x}\n```" for idx, x in enumerate(answers)]
-
-    async def summary_qa_without_search(
-        self,
-        deps: TaskEventDeps | None,
-        query: str,
-        contexts: list[str],
-    ):
-        deps = deps or TaskEventDeps()
-        SYSTEM_PROMPT = """
-You are a helpful research assistant that provides accurate answers based on the given information sources.
-
-Instructions:
-1. Answer the user's query using ONLY the information provided in the sources below
-2. Include inline citations for all factual claims using the format: "Paris is the capital of France [1][3][5]"
-3. Use the source index numbers that correspond to the numbered information sources
-4. If you cannot find relevant information in the sources, clearly state that the information is not available in the provided sources
-5. If the information sources are in different languages, respond in the same language as the user's query
-
-Ensure your response is well-structured, accurate, properly cited, and as informative as possible by including relevant details from the sources.
-"""
-        user_prompt = f"<informations>\n\n{contexts}\n\n</informations>\n\n<query>\n\n{query}\n\n</query>"
-        agent = Agent(
-            model=self.summary_qa_llm.model,
-            model_settings=self.summary_qa_llm.settings,
-            system_prompt=SYSTEM_PROMPT,
-            deps_type=PydanticAIDeps,
-        )
-        run = agent.run_stream(
-            user_prompt,
-            deps=PydanticAIDeps(event_deps=deps),
-        )
-        res = await prod_run_stream(deps, run)
-        return await res.get_output()
 
 
 if __name__ == "__main__":
