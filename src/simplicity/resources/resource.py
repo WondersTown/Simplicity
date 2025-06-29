@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from functools import cached_property
 
 from httpx import AsyncClient
@@ -9,13 +10,12 @@ from simplicity.resources.pydantic_ai_llm import (
 )
 from simplicity.settings import Settings
 
-from dataclasses import dataclass, field
-
 
 @dataclass
 class Resource:
     settings: Settings
     _llms: dict[str, ModelWithSettings] = field(default_factory=dict)
+
     def get_llm(self, llm_name: str) -> ModelWithSettings:
         """
         Get an LLM model by name from the pre-initialized models.
@@ -49,7 +49,11 @@ class Resource:
         if not self.settings.jina_api_key:
             raise ValueError("Jina API key is not set")
 
-        return JinaClient(api_key=self.settings.jina_api_key, client=self.http_client, concurrency=self.settings.jina_reader_concurrency)
+        return JinaClient(
+            api_key=self.settings.jina_api_key,
+            client=self.http_client,
+            concurrency=self.settings.jina_reader_concurrency,
+        )
 
     async def close(self):
         """Close the HTTP client when done."""

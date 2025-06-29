@@ -3,27 +3,7 @@ from stone_brick.llm import TaskEventDeps
 from stone_brick.pydantic_ai_utils import PydanticAIDeps, prod_run
 
 from simplicity.resources import ModelWithSettings
-from simplicity.resources.jina_client import ReaderData
-from pydantic import BaseModel
-
-
-class QAData(ReaderData):
-    query: str
-    answer: str
-
-    def llm_dump(self) -> dict:
-        return self.model_dump(
-            exclude={
-                "usage",
-                "images",
-                "links",
-                "url",
-                # For the raw reader data
-                "title",
-                "description",
-                "content",
-            }
-        )
+from simplicity.structure import QAData, ReaderData
 
 
 async def single_qa_structured(

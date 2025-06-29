@@ -58,6 +58,7 @@ Rules:
     output_type=Output,
 )
 
+
 async def _auto_translate(deps: TaskEventDeps, model: ModelWithSettings, query: str):
     run = agent.run(
         model=model.model,

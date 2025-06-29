@@ -1,16 +1,16 @@
 import re
 from asyncio import Semaphore
 from dataclasses import dataclass, field
-from datetime import datetime
 from logging import getLogger
-from typing import Annotated, Literal
-from uuid import uuid4
+from typing import Literal
 
 from httpx import AsyncClient, HTTPStatusError
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel
 from stone_brick.asynclib import gather
 from stone_brick.observability import instrument
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random
+
+from simplicity.structure import ReaderData, SearchData
 
 logger = getLogger(__name__)
 
@@ -23,17 +23,6 @@ class JinaMeta(BaseModel):
     usage: JinaUsage
 
 
-class SearchData(BaseModel):
-    id_: str = Field(default_factory=lambda: str(uuid4())[:6])
-    title: str
-    url: str
-    description: str
-    usage: JinaUsage
-
-    def llm_dump(self) -> dict:
-        return self.model_dump(exclude={"usage", "url"})
-
-
 class SearchResponse(BaseModel):
     code: Literal[200]
     data: list[SearchData]
@@ -41,41 +30,6 @@ class SearchResponse(BaseModel):
 
 
 # Pydantic models for the Jina Reader API response
-class ReaderData(BaseModel):
-    id_: str = Field(default_factory=lambda: str(uuid4())[:6])
-    title: str
-    url: str
-    description: str
-    content: str
-    images: Annotated[dict[str, str], Field(default_factory=dict)]
-    links: Annotated[dict[str, str], Field(default_factory=dict)]
-    publishedTime: datetime | None = None
-    usage: JinaUsage
-
-    @field_validator("publishedTime", mode="before")
-    @classmethod
-    def parse_published_time(cls, v):
-        if v is None or isinstance(v, datetime):
-            return v
-
-        if isinstance(v, str):
-            # Try to parse the format: "2019-07-17 14:31:44 -0400"
-            try:
-                return datetime.strptime(v, "%Y-%m-%d %H:%M:%S %z")
-            except ValueError:
-                # If that fails, try without timezone
-                try:
-                    return datetime.strptime(v, "%Y-%m-%d %H:%M:%S")
-                except ValueError:
-                    # If all parsing fails, return None
-                    return None
-
-        return v
-
-    def llm_dump(self) -> dict:
-        return self.model_dump(exclude={"usage", "images", "links", "url"})
-
-
 class ReaderResponse(BaseModel):
     code: Literal[200]
     data: ReaderData

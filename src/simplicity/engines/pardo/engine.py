@@ -15,13 +15,13 @@ from simplicity.common.auto_translate import auto_translate
 from simplicity.common.context_qa import context_qa
 from simplicity.common.single_qa import single_qa_structured
 from simplicity.common.translate import translate
-from simplicity.engines.eden.engine import ReaderData
 from simplicity.resources import (
     JinaClient,
     ModelWithSettings,
     Resource,
 )
 from simplicity.settings import Settings
+from simplicity.structure import ReaderData
 
 
 class PardoEngineConfig(BaseModel):
@@ -107,9 +107,7 @@ class PardoEngine:
             deps.spawn(), query, {str(x.id_): x for x in read}
         )
         llm_contexts = [x.llm_dump() for x in contexts]
-        return await context_qa(
-            deps, self.summary_qa_llm, query, llm_contexts
-        )
+        return await context_qa(deps, self.summary_qa_llm, query, llm_contexts)
 
 
 if __name__ == "__main__":

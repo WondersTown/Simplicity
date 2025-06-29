@@ -11,7 +11,6 @@ from stone_brick.llm import (
 )
 from stone_brick.pydantic_ai_utils import (
     PydanticAIDeps,
-    TaskEventDeps,
     prod_run,
     prod_run_stream,
     with_events,
@@ -23,8 +22,8 @@ from simplicity.resources import (
     ModelWithSettings,
     Resource,
 )
-from simplicity.resources.jina_client import ReaderData, SearchData
 from simplicity.settings import Settings
+from simplicity.structure import ReaderData, SearchData
 
 
 class EdenEngineConfig(BaseModel):
