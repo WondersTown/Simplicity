@@ -13,7 +13,7 @@ from stone_brick.observability import instrument
 
 from simplicity.common.auto_translate import auto_translate
 from simplicity.common.context_qa import context_qa
-from simplicity.common.single_qa import single_qa
+from simplicity.common.single_qa import single_qa_structured
 from simplicity.common.translate import translate
 from simplicity.engines.eden.engine import ReaderData
 from simplicity.resources import (
@@ -83,6 +83,18 @@ class PardoEngine:
         await deps.event_send(EventTaskOutput(task_output=searched))
         return searched
 
+    async def _map_reduce_qa(
+        self, deps: TaskEventDeps, query: str, contexts: dict[str, ReaderData]
+    ):
+        idx_contexts = list(contexts.values())
+        answers = await instrument(gather)(
+            *[
+                single_qa_structured(deps.spawn(), self.single_qa_llm, query, x)
+                for x in idx_contexts
+            ],
+        )
+        return [x for x in answers if not isinstance(x, Exception)]
+
     async def summary_qa(
         self,
         deps: TaskEventDeps | None,
@@ -94,27 +106,10 @@ class PardoEngine:
         contexts = await self._map_reduce_qa(
             deps.spawn(), query, {str(x.id_): x for x in read}
         )
-        return await context_qa(deps, self.summary_qa_llm, query, contexts)
-
-    async def _map_reduce_qa(
-        self, deps: TaskEventDeps, query: str, contexts: dict[str, ReaderData]
-    ):
-        idx_contexts = list(contexts.values())
-        answers = await instrument(gather)(
-            *[single_qa(deps.spawn(), self.single_qa_llm, query, x.content) for x in idx_contexts],
+        llm_contexts = [x.llm_dump() for x in contexts]
+        return await context_qa(
+            deps, self.summary_qa_llm, query, llm_contexts
         )
-        answers = [
-            (
-                ("published at " + idx_contexts[idx].publishedTime.isoformat() + "\n\n")  # type: ignore
-                if idx_contexts[idx].publishedTime
-                else ""
-            )
-            + x
-            for idx, x in enumerate(answers)
-            if not isinstance(x, Exception)
-        ]
-
-        return [f"{idx + 1}.\n```\n{x}\n```" for idx, x in enumerate(answers)]
 
 
 if __name__ == "__main__":

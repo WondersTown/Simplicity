@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic_ai.agent import Agent
 from stone_brick.llm import TaskEventDeps
 from stone_brick.pydantic_ai_utils import PydanticAIDeps, prod_run_stream
@@ -9,37 +11,36 @@ async def context_qa(
     deps: TaskEventDeps | None,
     llm: ModelWithSettings,
     query: str,
-    contexts: list[str],
+    contexts: list[Any],
 ):
     """
     Perform question-answering based on provided contexts.
-    
+
     Args:
         deps: Task event dependencies for tracking (optional)
         llm: The language model to use for QA
         query: The user's question
         contexts: List of context strings to answer from
-        
+
     Returns:
         The answer based on the provided contexts with citations
     """
     deps = deps or TaskEventDeps()
-    
+
     SYSTEM_PROMPT = """
-You are a helpful research assistant that provides accurate answers based on the given information sources.
+You are a research assistant that answers questions using only the provided information sources.
 
-Instructions:
-1. Answer the user's query using ONLY the information provided in the sources below
-2. Include inline citations for all factual claims using the format: "Paris is the capital of France [1][3][5]"
-3. Use the source index numbers that correspond to the numbered information sources
-4. If you cannot find relevant information in the sources, clearly state that the information is not available in the provided sources
-5. If the information sources are in different languages, respond in the same language as the user's query
+**Key Requirements:**
+- Answer ONLY from the provided sources below
+- Cite every factual claim inline: "fact [source_id]"
+- State clearly if information is not available in sources
+- Match the language of the user's query
 
-Ensure your response is well-structured, accurate, properly cited, and as informative as possible by including relevant details from the sources.
+Your response should be accurate, well-structured, and include all relevant details from the sources.
 """
-    
+
     user_prompt = f"<informations>\n\n{contexts}\n\n</informations>\n\n<query>\n\n{query}\n\n</query>"
-    
+
     agent = Agent(
         model=llm.model,
         model_settings=llm.settings,
@@ -51,4 +52,44 @@ Ensure your response is well-structured, accurate, properly cited, and as inform
         deps=PydanticAIDeps(event_deps=deps),
     )
     res = await prod_run_stream(deps, run)
-    return await res.get_output() 
+    return await res.get_output()
+
+
+if __name__ == "__main__":
+    import logfire
+    from anyio import run
+
+    from simplicity.resources import Resource
+    from simplicity.utils import get_settings_from_project_root
+
+    logfire.configure()
+    logfire.instrument_pydantic_ai()
+    logfire.instrument_httpx()
+
+    settings = get_settings_from_project_root()
+    resource = Resource(settings)
+    model = resource.get_llm("google/gemini-2.5-flash")
+    contexts = [
+        {
+            "id": "22bf33",
+            "content": "Paris is the capital of France",
+        },
+        {
+            "id": "sa2d3fa",
+            "content": "Vienna is the capital of Austria",
+        },
+        {
+            "id": "320df83",
+            "content": "Vichy was the capital of France during the second world war",
+        },
+        {
+            "id": "sd3kw92",
+            "content": "Château de Versailles was the home of Louis XIV",
+        },
+    ]
+
+    async def main():
+        res = await context_qa(None, model, "What is the capital of France?", contexts)
+        print(res)
+
+    run(main)
