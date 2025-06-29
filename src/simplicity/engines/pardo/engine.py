@@ -95,6 +95,7 @@ class PardoEngine:
         )
         return [x for x in answers if not isinstance(x, Exception)]
 
+    @instrument
     async def summary_qa(
         self,
         deps: TaskEventDeps | None,

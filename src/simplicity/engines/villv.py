@@ -11,6 +11,7 @@ from stone_brick.llm import (
 from stone_brick.observability import instrument
 
 from simplicity.common.auto_translate import auto_translate
+from simplicity.common.context_qa import context_qa
 from simplicity.common.split_question import (
     splitting_question,
 )
@@ -18,6 +19,7 @@ from simplicity.common.translate import translate
 from simplicity.engines.pardo.engine import PardoEngine, PardoEngineConfig
 from simplicity.resources import (
     JinaClient,
+    ModelWithSettings,
     Resource,
 )
 from simplicity.settings import Settings
@@ -37,6 +39,7 @@ class VillVEngine:
     pardo_engine: PardoEngine
     jina_client: JinaClient
     recursive_splitting: bool
+    split_model: ModelWithSettings
 
     @classmethod
     def new(cls, settings: Settings, resource: Resource, engine_config: str) -> Self:
@@ -59,6 +62,7 @@ class VillVEngine:
             ),
             jina_client=resource.jina_client,
             recursive_splitting=villv_config.recursive_splitting,
+            split_model=resource.get_llm(villv_config.split_model_name),
         )
 
     async def query(
@@ -92,7 +96,7 @@ class VillVEngine:
             search_query = query
 
         subqueries = await splitting_question(
-            deps.spawn(), self.pardo_engine.translate_llm, search_query
+            deps.spawn(), self.split_model, search_query
         )
 
         if len(subqueries) == 1:
@@ -115,7 +119,7 @@ class VillVEngine:
         if len(answers) == 1:
             return answers[0]
 
-        return await self.pardo_engine.summary_qa_without_search(deps, query, answers)
+        return await context_qa(deps, self.pardo_engine.summary_qa_llm, query, answers)
 
 
 async def main():
@@ -137,13 +141,13 @@ if __name__ == "__main__":
     async def main():
         settings = get_settings_from_project_root()
         resource = Resource(settings)
-        engine = VillVEngine.new(settings, resource, "villv")
+        engine = VillVEngine.new(settings, resource, "villv-pro")
         cnt = 0
         event_deps = TaskEventDeps()
         async for event in event_deps.consume(
             lambda: engine.query(
                 event_deps,
-                "比较新加坡、香港和东京的经济政策，同时分析它们的公共交通系统和住房负担能力，以及这些因素对人才吸引力的影响",
+                "比较新加坡、香港的经济政策和住房负担能力，以及这些因素对人才吸引力的影响",
             )
         ):
             cnt += 1
