@@ -13,11 +13,11 @@ class ModelWithSettings:
     settings: ModelSettings
 
 
-def create_pydantic_ai_model(settings: Settings, model_name: str) -> PydanticAIModel:
+def create_pydantic_ai_model(settings: Settings, model_conf_name: str) -> PydanticAIModel:
     try:
-        model_config = settings.llm_models_by_name[model_name]
+        model_config = settings.llm_configs[model_conf_name]
     except KeyError:
-        raise ValueError(f"Model {model_name} not found in config") from None
+        raise ValueError(f"Model config {model_conf_name} not found in config") from None
     try:
         provider_config = settings.providers[model_config.provider]
     except KeyError:
@@ -25,6 +25,6 @@ def create_pydantic_ai_model(settings: Settings, model_name: str) -> PydanticAIM
             f"Provider {model_config.provider} not found in config"
         ) from None
     return OpenAIModel(
-        model_name=model_config.name,
+        model_name=model_config.model_name,
         provider=provider_config.to_provider(),
     )

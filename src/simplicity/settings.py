@@ -19,25 +19,21 @@ class OAIProvider(BaseModel):
 
 class OAILLMModel(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    name: str
+    model_name: str
     provider: str
     settings: ModelSettings = Field(default_factory=ModelSettings)
 
 
 class Settings(BaseModel):
     providers: dict[str, OAIProvider]
-    llm_models: list[OAILLMModel]
+    llm_configs: dict[str, OAILLMModel]
     jina_api_key: str | None = None
     jina_reader_concurrency: int = 3
     engine_configs: dict[str, dict[str, Any]]
 
     @model_validator(mode="after")
     def validate_provider(self) -> Self:
-        for model in self.llm_models:
+        for model in self.llm_configs.values():
             if model.provider not in self.providers:
                 raise ValueError(f"Provider {model.provider} not found")
         return self
-
-    @cached_property
-    def llm_models_by_name(self) -> dict[str, OAILLMModel]:
-        return {model.name: model for model in self.llm_models}

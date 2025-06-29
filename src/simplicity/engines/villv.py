@@ -141,7 +141,7 @@ if __name__ == "__main__":
     async def main():
         settings = get_settings_from_project_root()
         resource = Resource(settings)
-        engine = VillVEngine.new(settings, resource, "villv-pro")
+        engine = VillVEngine.new(settings, resource, "villv")
         cnt = 0
         event_deps = TaskEventDeps()
         async for event in event_deps.consume(

@@ -16,7 +16,7 @@ class Resource:
     settings: Settings
     _llms: dict[str, ModelWithSettings] = field(default_factory=dict)
 
-    def get_llm(self, llm_name: str) -> ModelWithSettings:
+    def get_llm(self, llm_conf_name: str) -> ModelWithSettings:
         """
         Get an LLM model by name from the pre-initialized models.
 
@@ -29,14 +29,14 @@ class Resource:
         Raises:
             KeyError: If the model name is not found
         """
-        if llm_name not in self._llms:
-            if llm_name not in self.settings.llm_models_by_name:
-                raise KeyError(f"LLM model '{llm_name}' not found in settings")
-            self._llms[llm_name] = ModelWithSettings(
-                model=create_pydantic_ai_model(self.settings, llm_name),
-                settings=self.settings.llm_models_by_name[llm_name].settings,
+        if llm_conf_name not in self._llms:
+            if llm_conf_name not in self.settings.llm_configs:
+                raise KeyError(f"LLM model '{llm_conf_name}' not found in settings")
+            self._llms[llm_conf_name] = ModelWithSettings(
+                model=create_pydantic_ai_model(self.settings, llm_conf_name),
+                settings=self.settings.llm_configs[llm_conf_name].settings,
             )
-        return self._llms[llm_name]
+        return self._llms[llm_conf_name]
 
     @cached_property
     def http_client(self) -> AsyncClient:
