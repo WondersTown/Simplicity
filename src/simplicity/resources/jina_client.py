@@ -1,5 +1,5 @@
 import re
-from asyncio import Semaphore
+from asyncio import Semaphore, sleep
 from dataclasses import dataclass, field
 from logging import getLogger
 from typing import Literal
@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from stone_brick.asynclib import gather
 from stone_brick.observability import instrument
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random
+import random
 
 from simplicity.structure import ReaderData, SearchData
 
@@ -53,12 +54,15 @@ def clean_md_links(content: str) -> str:
 
     return content
 
+READ_TIMEOUT = 10
+READ_DELAY = 0.33
 
 @dataclass
 class JinaClient:
     api_key: str
     client: AsyncClient
     concurrency: int
+    read_timeout: int = READ_TIMEOUT
     _semaphore: Semaphore = field(init=False)
 
     def __post_init__(self):
@@ -87,7 +91,10 @@ class JinaClient:
         wait=wait_random(),
         retry=retry_if_exception_type(HTTPStatusError),
     )
-    async def read(self, target: str | SearchData, timeout: int = 15) -> ReaderResponse:
+    async def read(
+        self,
+        target: str | SearchData,
+    ) -> ReaderResponse:
         """
         Reads the content of a given URL using the Jina Reader API.
 
@@ -107,15 +114,16 @@ class JinaClient:
             "X-With-Generated-Alt": "true",
             "X-With-Images-Summary": "true",
             "X-With-Links-Summary": "true",
-            "X-Timeout": str(timeout),
+            "X-Timeout": str(self.read_timeout - 5),
         }
 
         target_url = target.url if isinstance(target, SearchData) else target
         async with self._semaphore:
+            await sleep((self.concurrency - self._semaphore._value - 1) * READ_DELAY)
             response = await self.client.get(
                 url=f"https://r.jina.ai/{target_url}",
                 headers=headers,
-                timeout=timeout + 10,
+                timeout=self.read_timeout,
             )
 
         response.raise_for_status()
@@ -132,15 +140,15 @@ class JinaClient:
 
     @instrument
     async def read_batch(
-        self, targets: list[str | SearchData], timeout: int = 15
+        self, targets: list[str | SearchData]
     ) -> list[ReaderResponse | Exception]:
         return await gather(
-            *[self.read(target, timeout) for target in targets],
+            *[self.read(target) for target in targets],
         )
 
     @instrument
     async def search_with_read(
-        self, query: str, num: int = 9, timeout: int = 15
+        self, query: str, num: int = 10
     ) -> list[ReaderData]:
         try:
             search_l: list[SearchData] = []
@@ -153,7 +161,7 @@ class JinaClient:
             raise RuntimeError(f"Failed to search using Jina: {e}") from e
 
         read_l = await gather(
-            *[self.read(result, timeout) for result in search_l],
+            *[self.read(result) for result in search_l],
         )
         result_l: list[ReaderData] = []
         for searched, read in zip(search_l, read_l, strict=True):

@@ -29,10 +29,12 @@ class PardoEngineConfig(BaseModel):
     translate_model_name: str
     single_qa_model_name: str
     summary_qa_model_name: str
+    read_pages: int
 
 
 @dataclass
 class PardoEngine:
+    config: PardoEngineConfig
     translate_llm: ModelWithSettings
     single_qa_llm: ModelWithSettings
     summary_qa_llm: ModelWithSettings
@@ -55,6 +57,7 @@ class PardoEngine:
         except KeyError:
             raise ValueError("Pardo engine config not found") from None
         return cls(
+            config=pardo_config,
             translate_llm=resource.get_llm(pardo_config.translate_model_name),
             single_qa_llm=resource.get_llm(pardo_config.single_qa_model_name),
             summary_qa_llm=resource.get_llm(pardo_config.summary_qa_model_name),
@@ -77,8 +80,7 @@ class PardoEngine:
             )
         searched = await self.jina_client.search_with_read(
             query_search,
-            num=9,
-            timeout=15,
+            num=self.config.read_pages,
         )
         await deps.event_send(EventTaskOutput(task_output=searched))
         return searched
@@ -117,15 +119,20 @@ if __name__ == "__main__":
     from simplicity.resources import Resource
     from simplicity.settings import Settings
     from simplicity.utils import get_settings_from_project_root
+    import logfire
+    logfire.configure()
+    logfire.instrument_httpx()
+    logfire.instrument_pydantic_ai()
+    
 
     async def main():
         settings = get_settings_from_project_root()
         resource = Resource(settings)
-        engine = PardoEngine.new(settings, resource, "pardo-pro")
+        engine = PardoEngine.new(settings, resource, "pardo-flash")
         cnt = 0
         event_deps = TaskEventDeps()
         async for event in event_deps.consume(
-            lambda: engine.summary_qa(event_deps, "日本的首都是哪里?", "日本语")
+            lambda: engine.summary_qa(event_deps, "销售税应该向买家所在地缴纳还是卖家所在地缴纳?" )
         ):
             cnt += 1
             if not isinstance(event, EndResult):
