@@ -52,6 +52,7 @@ Key principles:
 - The original language of the query is not important, do not consider it
 
 Rules:
+- The translated text should be clear enough to indicate the real intention of the original query
 - Preserve proper nouns, technical terms, and brand names
 - Maintain original formatting and structure""",
     deps_type=PydanticAIDeps,
