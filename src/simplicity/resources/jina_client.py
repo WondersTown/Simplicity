@@ -9,7 +9,6 @@ from pydantic import BaseModel
 from stone_brick.asynclib import gather
 from stone_brick.observability import instrument
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random
-import random
 
 from simplicity.structure import ReaderData, SearchData
 

@@ -79,8 +79,6 @@ async def auto_translate(deps: TaskEventDeps, model: ModelWithSettings, query: s
 
 if __name__ == "__main__":
     import logfire
-    from anyio import run
-    from stone_brick.asynclib import gather
 
     from simplicity.resources import Resource
     from simplicity.utils import get_settings_from_project_root
@@ -118,42 +116,42 @@ if __name__ == "__main__":
     resource = Resource(settings)
     model = resource.get_llm("google/gemini-2.5-flash")
 
-    async def main():
-        # Run all translations in parallel
-        results = await gather(
-            *[_auto_translate(TaskEventDeps(), model, query) for query, _ in tasks],
-            batch_size=5,
-        )
+    # async def main():
+    #     # Run all translations in parallel
+    #     results = await gather(
+    #         *[_auto_translate(TaskEventDeps(), model, query) for query, _ in tasks],
+    #         batch_size=5,
+    #     )
 
-        # Check results
-        failed = []
-        for (query, acceptable_langs), res in zip(tasks, results, strict=False):
-            if isinstance(res, Exception):
-                failed.append((query, "Exception", acceptable_langs, "Exception"))
-                continue
-            is_correct = res.target_lang in acceptable_langs
-            if not is_correct:
-                failed.append(
-                    (query, res.target_lang, acceptable_langs, res.translated_query)
-                )
+    #     # Check results
+    #     failed = []
+    #     for (query, acceptable_langs), res in zip(tasks, results, strict=False):
+    #         if isinstance(res, Exception):
+    #             failed.append((query, "Exception", acceptable_langs, "Exception"))
+    #             continue
+    #         is_correct = res.target_lang in acceptable_langs
+    #         if not is_correct:
+    #             failed.append(
+    #                 (query, res.target_lang, acceptable_langs, res.translated_query)
+    #             )
 
-        if failed:
-            print(f"Failed {len(failed)} out of {len(tasks)} tests:\n")
-            for query, detected, acceptable, translated in failed:
-                print(f"✗ Query: {query}")
-                print(f"  Target: {detected} (expected: {', '.join(acceptable)})")
-                print(f"  Translated: {translated}")
-                print()
-        else:
-            print(f"✓ All {len(tasks)} tests passed!\n")
-            for (query, acceptable_langs), res in zip(tasks, results, strict=False):
-                if isinstance(res, Exception):
-                    continue
-                print(f"✓ Query: {query}")
-                print(
-                    f"  Target: {res.target_lang} (acceptable: {', '.join(acceptable_langs)})"
-                )
-                print(f"  Translated: {res.translated_query}")
-                print()
+    #     if failed:
+    #         print(f"Failed {len(failed)} out of {len(tasks)} tests:\n")
+    #         for query, detected, acceptable, translated in failed:
+    #             print(f"✗ Query: {query}")
+    #             print(f"  Target: {detected} (expected: {', '.join(acceptable)})")
+    #             print(f"  Translated: {translated}")
+    #             print()
+    #     else:
+    #         print(f"✓ All {len(tasks)} tests passed!\n")
+    #         for (query, acceptable_langs), res in zip(tasks, results, strict=False):
+    #             if isinstance(res, Exception):
+    #                 continue
+    #             print(f"✓ Query: {query}")
+    #             print(
+    #                 f"  Target: {res.target_lang} (acceptable: {', '.join(acceptable_langs)})"
+    #             )
+    #             print(f"  Translated: {res.translated_query}")
+    #             print()
 
-    run(main)
+    # run(main)

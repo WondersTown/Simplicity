@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, TypeAlias
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
@@ -61,3 +61,6 @@ class QAData(ReaderData):
                 "content",
             }
         )
+
+
+InfoData: TypeAlias = ReaderData | SearchData | QAData

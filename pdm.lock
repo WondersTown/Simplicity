@@ -5,7 +5,7 @@
 groups = ["default", "demo", "dev"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:edf2cf640fe9e2e6849f70d9ea7c8c83db2d20fbf2367d4f9fe7d8893039b0fa"
+content_hash = "sha256:f1222d59d09c760ed1c3131a83811c593beab73ca6d382e6c4fa97c33e2573b3"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -1018,69 +1018,69 @@ files = [
 
 [[package]]
 name = "stone-brick-toolkit"
-version = "0.9.0"
+version = "0.10.2"
 summary = ""
 files = [
-    {file = "stone_brick_toolkit-0.9.0-py3-none-any.whl", hash = "sha256:476e8de58cac7c12d48f206a351d04b211c37eab8731b303391d6ed34be89f0e"},
-    {file = "stone_brick_toolkit-0.9.0.tar.gz", hash = "sha256:1d9a22388bee87a88aff4ebb45b7a32689ca29f07921f98008e8eb719c64eba4"},
+    {file = "stone_brick_toolkit-0.10.2-py3-none-any.whl", hash = "sha256:7841bdf895618245161b8ba8b13b3b0f48338107c6af517670925eac5abb990c"},
+    {file = "stone_brick_toolkit-0.10.2.tar.gz", hash = "sha256:668a9373f8b56eabdfcfa03be516e9702f32a45a133f62e1233e9db4180070c7"},
 ]
 
 [[package]]
 name = "stone-brick-toolkit"
-version = "0.9.0"
+version = "0.10.2"
 extras = ["llm"]
 summary = ""
 dependencies = [
     "exceptiongroup",
     "openai",
-    "stone-brick-toolkit==0.9.0",
+    "stone-brick-toolkit==0.10.2",
     "tenacity",
 ]
 files = [
-    {file = "stone_brick_toolkit-0.9.0-py3-none-any.whl", hash = "sha256:476e8de58cac7c12d48f206a351d04b211c37eab8731b303391d6ed34be89f0e"},
-    {file = "stone_brick_toolkit-0.9.0.tar.gz", hash = "sha256:1d9a22388bee87a88aff4ebb45b7a32689ca29f07921f98008e8eb719c64eba4"},
+    {file = "stone_brick_toolkit-0.10.2-py3-none-any.whl", hash = "sha256:7841bdf895618245161b8ba8b13b3b0f48338107c6af517670925eac5abb990c"},
+    {file = "stone_brick_toolkit-0.10.2.tar.gz", hash = "sha256:668a9373f8b56eabdfcfa03be516e9702f32a45a133f62e1233e9db4180070c7"},
 ]
 
 [[package]]
 name = "stone-brick-toolkit"
-version = "0.9.0"
+version = "0.10.2"
 extras = ["observability"]
 summary = ""
 dependencies = [
     "opentelemetry-api",
-    "stone-brick-toolkit==0.9.0",
+    "stone-brick-toolkit==0.10.2",
 ]
 files = [
-    {file = "stone_brick_toolkit-0.9.0-py3-none-any.whl", hash = "sha256:476e8de58cac7c12d48f206a351d04b211c37eab8731b303391d6ed34be89f0e"},
-    {file = "stone_brick_toolkit-0.9.0.tar.gz", hash = "sha256:1d9a22388bee87a88aff4ebb45b7a32689ca29f07921f98008e8eb719c64eba4"},
+    {file = "stone_brick_toolkit-0.10.2-py3-none-any.whl", hash = "sha256:7841bdf895618245161b8ba8b13b3b0f48338107c6af517670925eac5abb990c"},
+    {file = "stone_brick_toolkit-0.10.2.tar.gz", hash = "sha256:668a9373f8b56eabdfcfa03be516e9702f32a45a133f62e1233e9db4180070c7"},
 ]
 
 [[package]]
 name = "stone-brick-toolkit"
-version = "0.9.0"
+version = "0.10.2"
 extras = ["pydantic-ai"]
 summary = ""
 dependencies = [
     "pydantic-ai-slim",
-    "stone-brick-toolkit==0.9.0",
+    "stone-brick-toolkit==0.10.2",
 ]
 files = [
-    {file = "stone_brick_toolkit-0.9.0-py3-none-any.whl", hash = "sha256:476e8de58cac7c12d48f206a351d04b211c37eab8731b303391d6ed34be89f0e"},
-    {file = "stone_brick_toolkit-0.9.0.tar.gz", hash = "sha256:1d9a22388bee87a88aff4ebb45b7a32689ca29f07921f98008e8eb719c64eba4"},
+    {file = "stone_brick_toolkit-0.10.2-py3-none-any.whl", hash = "sha256:7841bdf895618245161b8ba8b13b3b0f48338107c6af517670925eac5abb990c"},
+    {file = "stone_brick_toolkit-0.10.2.tar.gz", hash = "sha256:668a9373f8b56eabdfcfa03be516e9702f32a45a133f62e1233e9db4180070c7"},
 ]
 
 [[package]]
 name = "stone-brick-toolkit"
-version = "0.9.0"
+version = "0.10.2"
 extras = ["retry"]
 summary = ""
 dependencies = [
-    "stone-brick-toolkit==0.9.0",
+    "stone-brick-toolkit==0.10.2",
     "tenacity",
 ]
 files = [
-    {file = "stone_brick_toolkit-0.9.0-py3-none-any.whl", hash = "sha256:476e8de58cac7c12d48f206a351d04b211c37eab8731b303391d6ed34be89f0e"},
-    {file = "stone_brick_toolkit-0.9.0.tar.gz", hash = "sha256:1d9a22388bee87a88aff4ebb45b7a32689ca29f07921f98008e8eb719c64eba4"},
+    {file = "stone_brick_toolkit-0.10.2-py3-none-any.whl", hash = "sha256:7841bdf895618245161b8ba8b13b3b0f48338107c6af517670925eac5abb990c"},
+    {file = "stone_brick_toolkit-0.10.2.tar.gz", hash = "sha256:668a9373f8b56eabdfcfa03be516e9702f32a45a133f62e1233e9db4180070c7"},
 ]
 
 [[package]]

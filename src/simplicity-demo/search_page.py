@@ -1,5 +1,4 @@
 import asyncio
-import atexit
 import queue
 import threading
 import time

@@ -1,4 +1,3 @@
-from functools import cached_property
 from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator

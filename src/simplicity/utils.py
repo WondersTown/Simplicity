@@ -1,4 +1,5 @@
 import os
+import re
 
 import tomli
 
@@ -40,3 +41,34 @@ def get_settings_from_project_root():
         raise FileNotFoundError(f"Settings file not found at {settings_file}")
     with open(settings_file, "rb") as f:
         return Settings.model_validate(tomli.load(f))
+
+
+def match_link(text: str) -> list[tuple[int, int, list[str]]]:
+    """
+    Find substrings like "[5bc707, 798902, 2c18c5, 85ec8c]" with one or more hash values.
+    
+    Args:
+        text: The input text to search for hash patterns
+        
+    Returns:
+        list[tuple[int, int, list[str]]]: List of tuples containing:
+            - start position of the link (position of '[')
+            - end position of the link (position of ']')  
+            - list of hash strings found within the brackets
+    """
+    # Pattern to match brackets containing one or more comma-separated hash values
+    # Hash pattern: 6 hexadecimal characters (a-f, A-F, 0-9)
+    pattern = r'\[([a-fA-F0-9]{6}(?:,\s*[a-fA-F0-9]{6})*)\]'
+    
+    results = []
+    for match in re.finditer(pattern, text):
+        start_pos = match.start()
+        end_pos = match.end()
+        
+        # Extract the content inside brackets and split by comma
+        hash_content = match.group(1)
+        hashes = [h.strip() for h in hash_content.split(',')]
+        
+        results.append((start_pos, end_pos, hashes))
+    
+    return results

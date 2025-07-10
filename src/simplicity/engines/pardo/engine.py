@@ -1,12 +1,13 @@
 from dataclasses import dataclass
-from typing import Literal, Self
+from typing import Literal, Self, Sequence, TypeAlias
 
 from pydantic import BaseModel
 from stone_brick.asynclib import gather
+from stone_brick.asynclib.stream_runner import StreamRunner
 from stone_brick.llm import (
-    EndResult,
-    EventTaskOutput,
+    TaskEvent,
     TaskEventDeps,
+    TaskOutput,
     print_task_event,
 )
 from stone_brick.observability import instrument
@@ -21,7 +22,8 @@ from simplicity.resources import (
     Resource,
 )
 from simplicity.settings import Settings
-from simplicity.structure import ReaderData
+from simplicity.structure import InfoData, QAData, ReaderData, SearchData
+from simplicity.utils import match_link
 
 
 class PardoEngineConfig(BaseModel):
@@ -31,6 +33,7 @@ class PardoEngineConfig(BaseModel):
     summary_qa_model_name: str
     read_pages: int
 
+OutputDataType: TypeAlias = Sequence[InfoData] | str
 
 @dataclass
 class PardoEngine:
@@ -66,7 +69,7 @@ class PardoEngine:
 
     async def _search(
         self,
-        deps: TaskEventDeps,
+        deps: TaskEventDeps[OutputDataType],
         query: str,
         search_lang: str | Literal["auto"] | None = "auto",
     ):
@@ -82,11 +85,11 @@ class PardoEngine:
             query_search,
             num=self.config.read_pages,
         )
-        await deps.event_send(EventTaskOutput(task_output=searched))
+        await deps.send(TaskOutput(data=searched))
         return searched
 
     async def _map_reduce_qa(
-        self, deps: TaskEventDeps, query: str, contexts: dict[str, ReaderData]
+        self, deps: TaskEventDeps[OutputDataType], query: str, contexts: dict[str, ReaderData]
     ):
         idx_contexts = list(contexts.values())
         answers = await instrument(gather)(
@@ -95,16 +98,17 @@ class PardoEngine:
                 for x in idx_contexts
             ],
         )
-        return [x for x in answers if not isinstance(x, Exception)]
+        answers = [x for x in answers if not isinstance(x, Exception)]
+        await deps.send(TaskOutput(data=answers))
+        return answers
 
     @instrument
     async def summary_qa(
         self,
-        deps: TaskEventDeps | None,
+        deps: TaskEventDeps[OutputDataType],
         query: str,
         search_lang: str | Literal["auto"] | None = "auto",
     ):
-        deps = deps or TaskEventDeps()
         read = await self._search(deps.spawn(), query, search_lang)
         contexts = await self._map_reduce_qa(
             deps.spawn(), query, {str(x.id_): x for x in read}
@@ -114,12 +118,12 @@ class PardoEngine:
 
 
 if __name__ == "__main__":
+    import logfire
     from anyio import run
 
     from simplicity.resources import Resource
     from simplicity.settings import Settings
     from simplicity.utils import get_settings_from_project_root
-    import logfire
     logfire.configure()
     logfire.instrument_httpx()
     logfire.instrument_pydantic_ai()
@@ -130,16 +134,24 @@ if __name__ == "__main__":
         resource = Resource(settings)
         engine = PardoEngine.new(settings, resource, "pardo-flash")
         cnt = 0
-        event_deps = TaskEventDeps()
-        async for event in event_deps.consume(
-            lambda: engine.summary_qa(event_deps, "销售税应该向买家所在地缴纳还是卖家所在地缴纳?" )
-        ):
-            cnt += 1
-            if not isinstance(event, EndResult):
-                if event[1]:
-                    print_task_event(event[0])
-                else:
+        collected: dict[str, ReaderData | SearchData | QAData] = {}
+        with StreamRunner[TaskEvent[OutputDataType], str]() as runner:
+            event_deps = TaskEventDeps(producer=runner.producer)
+            async with runner.run(
+                engine.summary_qa(event_deps, "销售税应该向买家所在地缴纳还是卖家所在地缴纳?" )
+            ) as loop:
+                async for event in loop:
+                    if isinstance(event.content, TaskOutput) and isinstance(event.content.data, list):
+                        for x in event.content.data:
+                            if isinstance(x, (ReaderData, SearchData, QAData)):
+                                collected[x.id_] = x
+                    cnt += 1
                     print(f"thinking: {cnt}")
-                    print_task_event(event[0])
+                    print_task_event(event)
+            
+            ans = runner.result
+            # links = match_link(ans)
+            
+            print(f"result: {ans}")
 
     run(main)

@@ -46,8 +46,6 @@ async def translate(
 
 if __name__ == "__main__":
     import logfire
-    from anyio import run
-    from stone_brick.asynclib import gather
 
     from simplicity.resources import Resource
     from simplicity.utils import get_settings_from_project_root
@@ -62,11 +60,11 @@ if __name__ == "__main__":
     resource = Resource(settings)
     model = resource.get_llm("google/gemini-2.5-flash-lite-preview-06-17")
 
-    async def main():
-        results = await gather(
-            *[translate(TaskEventDeps(), model, query, lang) for query, lang in tasks],
-            batch_size=5,
-        )
-        print(results)
+    # async def main():
+    #     results = await gather(
+    #         *[translate(TaskEventDeps(), model, query, lang) for query, lang in tasks],
+    #         batch_size=5,
+    #     )
+    #     print(results)
 
-    run(main)
+    # run(main)

@@ -8,7 +8,7 @@ from simplicity.resources import ModelWithSettings
 
 
 async def context_qa(
-    deps: TaskEventDeps | None,
+    deps: TaskEventDeps,
     llm: ModelWithSettings,
     query: str,
     contexts: list[Any],
@@ -25,18 +25,21 @@ async def context_qa(
     Returns:
         The answer based on the provided contexts with citations
     """
-    deps = deps or TaskEventDeps()
-
     SYSTEM_PROMPT = """
-You are a research assistant that answers questions using only the provided information sources.
+You are a research assistant that answers questions using the provided sources.
 
-**Key Requirements:**
-- Answer ONLY from the provided sources below
-- Cite every factual claim inline: "Paris is the capital of France [source 1 id, source 2 id]..."
-- State clearly if information is not available in sources
-- Match the language of the user's query
+**Instructions:**
 
-Your response should be accurate, well-structured, and include all relevant details from the sources.
+1. **Citations**: Cite every fact immediately after stating it: "Paris is the capital [22bf33]" or "This is documented [22bf33, a32d83]"
+
+2. **Answers**: Give direct, substantive answers with relevant details from the sources. If information is missing, clearly state what's not available.
+
+3. **Language Matching**: Respond in the same language as the user's question
+
+4. **Response Structure**: 
+   - Lead with a direct answer to the question, keep the response well-organized and easy to read
+   - Use conversational, natural language that matches the query's tone, avoid overly formal or academic language unless the query requires it
+   - Be concise and focus on what the user actually wants to know
 """
 
     user_prompt = f"<informations>\n\n{contexts}\n\n</informations>\n\n<query>\n\n{query}\n\n</query>"
@@ -57,7 +60,6 @@ Your response should be accurate, well-structured, and include all relevant deta
 
 if __name__ == "__main__":
     import logfire
-    from anyio import run
 
     from simplicity.resources import Resource
     from simplicity.utils import get_settings_from_project_root
@@ -88,8 +90,8 @@ if __name__ == "__main__":
         },
     ]
 
-    async def main():
-        res = await context_qa(None, model, "What is the capital of France?", contexts)
-        print(res)
+    # async def main():
+    #     res = await context_qa(None, model, "What is the capital of France?", contexts)
+    #     print(res)
 
-    run(main)
+    # run(main)

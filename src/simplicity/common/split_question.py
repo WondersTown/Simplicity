@@ -78,7 +78,6 @@ async def recursive_splitting_question(
 
 if __name__ == "__main__":
     import logfire
-    from anyio import run
     from stone_brick.asynclib import gather
 
     from simplicity.resources import Resource
@@ -179,32 +178,32 @@ if __name__ == "__main__":
         ),
     ]
 
-    async def main():
-        # Run all in parallel
-        results = await gather(
-            *[splitting_question(TaskEventDeps(), model, query) for query, _ in tasks],
-        )
+    # async def main():
+    #     # Run all in parallel
+    #     results = await gather(
+    #         *[splitting_question(TaskEventDeps(), model, query) for query, _ in tasks],
+    #     )
 
-        failed = []
+    #     failed = []
 
-        for (query, expected_count), output in zip(tasks, results, strict=True):
-            if isinstance(output, Exception):
-                failed.append((query, "Exception", expected_count, "Exception"))
-                continue
-            is_failed = (
-                len(output) < expected_count[0] or len(output) > expected_count[1]
-            )
-            if is_failed:
-                failed.append((query, "Count mismatch", expected_count, len(output)))
-            print("✓" if not is_failed else "✗", end="")
-            print(f" Query: {query}")
-            print(f"  Expected: {expected_count}")
-            print(f"  Actual: {len(output)}")
-            print(f"  Subqueries: {output}")
+    #     for (query, expected_count), output in zip(tasks, results, strict=True):
+    #         if isinstance(output, Exception):
+    #             failed.append((query, "Exception", expected_count, "Exception"))
+    #             continue
+    #         is_failed = (
+    #             len(output) < expected_count[0] or len(output) > expected_count[1]
+    #         )
+    #         if is_failed:
+    #             failed.append((query, "Count mismatch", expected_count, len(output)))
+    #         print("✓" if not is_failed else "✗", end="")
+    #         print(f" Query: {query}")
+    #         print(f"  Expected: {expected_count}")
+    #         print(f"  Actual: {len(output)}")
+    #         print(f"  Subqueries: {output}")
 
-        if not failed:
-            print("All tests passed")
-        else:
-            print(f"Failed {len(failed)} out of {len(tasks)} tests")
+    #     if not failed:
+    #         print("All tests passed")
+    #     else:
+    #         print(f"Failed {len(failed)} out of {len(tasks)} tests")
 
-    run(main)
+    # run(main)
