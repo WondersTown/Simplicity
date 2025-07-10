@@ -85,11 +85,6 @@ class JinaClient:
         response.raise_for_status()
         return SearchResponse.model_validate(response.json())
 
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_random(),
-        retry=retry_if_exception_type(HTTPStatusError),
-    )
     async def read(
         self,
         target: str | SearchData,
