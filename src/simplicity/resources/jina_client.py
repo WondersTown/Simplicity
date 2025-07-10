@@ -110,10 +110,11 @@ class JinaClient:
             "Accept": "application/json",
             "Authorization": f"Bearer {self.api_key}",
             "X-Engine": "cf-browser-rendering",
-            "X-With-Generated-Alt": "true",
-            "X-With-Images-Summary": "true",
-            "X-With-Links-Summary": "true",
-            "X-Timeout": str(self.read_timeout - 5),
+            # "X-With-Generated-Alt": "true",
+            "X-Retain-Images": "none",
+            # "X-With-Images-Summary": "true",
+            # "X-With-Links-Summary": "true",
+            # "X-Timeout": str(self.read_timeout - 2),
         }
 
         target_url = target.url if isinstance(target, SearchData) else target
