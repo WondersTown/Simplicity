@@ -54,7 +54,7 @@ def clean_md_links(content: str) -> str:
     return content
 
 READ_TIMEOUT = 10
-READ_DELAY = 0.33
+READ_DELAY = 0.333
 
 @dataclass
 class JinaClient:
@@ -85,6 +85,11 @@ class JinaClient:
         response.raise_for_status()
         return SearchResponse.model_validate(response.json())
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_random(),
+        retry=retry_if_exception_type(HTTPStatusError),
+    )
     async def read(
         self,
         target: str | SearchData,
