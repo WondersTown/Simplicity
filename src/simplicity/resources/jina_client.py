@@ -54,7 +54,7 @@ def clean_md_links(content: str) -> str:
     return content
 
 READ_TIMEOUT = 10
-READ_DELAY = 0.333
+# READ_DELAY = 0.333
 
 @dataclass
 class JinaClient:
@@ -87,7 +87,6 @@ class JinaClient:
 
     @retry(
         stop=stop_after_attempt(3),
-        wait=wait_random(),
         retry=retry_if_exception_type(HTTPStatusError),
     )
     async def read(
@@ -119,7 +118,7 @@ class JinaClient:
 
         target_url = target.url if isinstance(target, SearchData) else target
         async with self._semaphore:
-            await sleep((self.concurrency - self._semaphore._value - 1) * READ_DELAY)
+            # await sleep((self.concurrency - self._semaphore._value - 1) * READ_DELAY)
             response = await self.client.get(
                 url=f"https://r.jina.ai/{target_url}",
                 headers=headers,
