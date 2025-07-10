@@ -108,7 +108,7 @@ class JinaClient:
         headers = {
             "Accept": "application/json",
             "Authorization": f"Bearer {self.api_key}",
-            "X-Engine": "cf-browser-rendering",
+            # "X-Engine": "cf-browser-rendering",
             # "X-With-Generated-Alt": "true",
             "X-Retain-Images": "none",
             # "X-With-Images-Summary": "true",
