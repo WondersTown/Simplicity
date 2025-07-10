@@ -53,6 +53,7 @@ Key principles:
 
 Rules:
 - The translated text should be clear enough to indicate the real intention of the original query
+- The output query should be optimized for search engine, not necessarily excatly the same as the original query
 - Preserve proper nouns, technical terms, and brand names
 - Maintain original formatting and structure""",
     deps_type=PydanticAIDeps,

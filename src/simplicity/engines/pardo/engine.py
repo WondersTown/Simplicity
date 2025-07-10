@@ -138,7 +138,7 @@ if __name__ == "__main__":
         with StreamRunner[TaskEvent[OutputDataType], str]() as runner:
             event_deps = TaskEventDeps(producer=runner.producer)
             async with runner.run(
-                engine.summary_qa(event_deps, "销售税应该向买家所在地缴纳还是卖家所在地缴纳?" )
+                engine.summary_qa(event_deps, "250v的电器(主要指充电头)在100v条件下能工作吗?" )
             ) as loop:
                 async for event in loop:
                     if isinstance(event.content, TaskOutput) and isinstance(event.content.data, list):
