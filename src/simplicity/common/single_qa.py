@@ -1,17 +1,14 @@
-from pydantic import BaseModel
 from pydantic_ai.agent import Agent
-from stone_brick.llm import TaskEventDeps
 from stone_brick.pydantic_ai_utils import PydanticAIDeps, prod_run
-
-from simplicity.resources import JinaClient, ModelWithSettings
-from simplicity.structure import QAData, ReaderData, SearchData
 from tiktoken import Encoding
 
+from simplicity.resources import JinaClient, ModelWithSettings
+from simplicity.structure import QAData, ReaderData, SearchData, SimplicityTaskDeps
 
 MIN_TOKEN_LENGTH = 400
 
 async def single_qa_structured(
-    deps: TaskEventDeps,
+    deps: SimplicityTaskDeps,
     llm: ModelWithSettings,
     query: str,
     source: ReaderData | SearchData,
@@ -37,7 +34,7 @@ async def single_qa_structured(
 
 
 async def single_qa(
-    deps: TaskEventDeps,
+    deps: SimplicityTaskDeps,
     llm: ModelWithSettings,
     query: str,
     source: str,

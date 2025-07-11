@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from typing import Any
+
+from pydantic import BaseModel
 from pydantic_ai.agent import Agent
 from stone_brick.llm import (
     TaskEventDeps,
@@ -13,6 +14,7 @@ from simplicity.resources import (
     ModelWithSettings,
     Resource,
 )
+from simplicity.structure import SimplicityTaskDeps
 
 
 class Output(BaseModel):
@@ -62,7 +64,7 @@ Rules:
 )
 
 
-async def _auto_translate(deps: TaskEventDeps, model: ModelWithSettings, query: str):
+async def _auto_translate(deps: SimplicityTaskDeps, model: ModelWithSettings, query: str):
     run = agent.run(
         model=model.model,
         model_settings=model.settings,
@@ -75,19 +77,19 @@ async def _auto_translate(deps: TaskEventDeps, model: ModelWithSettings, query: 
     return res
 
 
-async def auto_translate(deps: TaskEventDeps, model: ModelWithSettings, query: str):
+async def auto_translate(deps: SimplicityTaskDeps, model: ModelWithSettings, query: str):
     res = await _auto_translate(deps, model, query)
     return res.translated_query
 
 
 if __name__ == "__main__":
     import logfire
+    from anyio import run
+    from stone_brick.asynclib import gather
+    from stone_brick.asynclib.stream_runner import StreamRunner
 
     from simplicity.resources import Resource
     from simplicity.utils import get_settings_from_project_root
-    from stone_brick.asynclib import gather
-    from anyio import run
-    from stone_brick.asynclib.stream_runner import StreamRunner
 
     logfire.configure()
     logfire.instrument_pydantic_ai()

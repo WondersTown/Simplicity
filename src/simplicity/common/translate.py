@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 from pydantic_ai.agent import Agent
-from stone_brick.llm import TaskEventDeps
 from stone_brick.pydantic_ai_utils import PydanticAIDeps, prod_run
 
 from simplicity.resources import ModelWithSettings
+from simplicity.structure import SimplicityTaskDeps
 
 
 class Output(BaseModel):
@@ -18,7 +18,7 @@ agent = Agent(
 
 
 async def translate(
-    deps: TaskEventDeps, model: ModelWithSettings, query: str, lang: str
+    deps: SimplicityTaskDeps, model: ModelWithSettings, query: str, lang: str
 ) -> str:
     """
     Translate text to a target language using the provided language model.

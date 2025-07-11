@@ -1,14 +1,14 @@
 from typing import Any
 
 from pydantic_ai.agent import Agent
-from stone_brick.llm import TaskEventDeps
 from stone_brick.pydantic_ai_utils import PydanticAIDeps, prod_run_stream
 
 from simplicity.resources import ModelWithSettings
+from simplicity.structure import SimplicityTaskDeps
 
 
 async def context_qa(
-    deps: TaskEventDeps,
+    deps: SimplicityTaskDeps,
     llm: ModelWithSettings,
     query: str,
     contexts: list[Any],

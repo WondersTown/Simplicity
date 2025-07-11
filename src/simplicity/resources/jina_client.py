@@ -1,5 +1,5 @@
 import re
-from asyncio import Semaphore, sleep
+from asyncio import Semaphore
 from dataclasses import dataclass, field
 from logging import getLogger
 from typing import Literal

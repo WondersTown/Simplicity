@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-from typing import Literal, Self, Sequence, TypeAlias
+from typing import Literal, Self
 
 from pydantic import BaseModel
 from stone_brick.asynclib import gather
 from stone_brick.asynclib.stream_runner import StreamRunner
 from stone_brick.llm import (
-    TaskEvent,
     TaskEventDeps,
     TaskOutput,
     print_task_event,
@@ -22,8 +21,14 @@ from simplicity.resources import (
     Resource,
 )
 from simplicity.settings import Settings
-from simplicity.structure import InfoData, QAData, ReaderData, SearchData
-from simplicity.utils import match_link
+from simplicity.structure import (
+    OutputDataType,
+    QAData,
+    ReaderData,
+    SearchData,
+    SimplicityTask,
+    SimplicityTaskDeps,
+)
 
 
 class PardoEngineConfig(BaseModel):
@@ -32,8 +37,6 @@ class PardoEngineConfig(BaseModel):
     single_qa_model_name: str
     summary_qa_model_name: str
     read_pages: int
-
-OutputDataType: TypeAlias = Sequence[InfoData] | str
 
 @dataclass
 class PardoEngine:
@@ -71,7 +74,7 @@ class PardoEngine:
 
     async def _search(
         self,
-        deps: TaskEventDeps[OutputDataType],
+        deps: SimplicityTaskDeps,
         query: str,
         search_lang: str | Literal["auto"] | None = "auto",
     ):
@@ -91,7 +94,7 @@ class PardoEngine:
         return searched.data
 
     async def _map_reduce_qa(
-        self, deps: TaskEventDeps[OutputDataType], query: str, contexts: dict[str, ReaderData | SearchData], *, jina: JinaClient | None = None
+        self, deps: SimplicityTaskDeps, query: str, contexts: dict[str, ReaderData | SearchData], *, jina: JinaClient | None = None
     ):
         idx_contexts = list(contexts.values())
         answers = await instrument(gather)(
@@ -138,16 +141,15 @@ if __name__ == "__main__":
         engine = PardoEngine.new(settings, resource, "pardo-flash")
         cnt = 0
         collected: dict[str, ReaderData | SearchData | QAData] = {}
-        with StreamRunner[TaskEvent[OutputDataType], str]() as runner:
-            event_deps = TaskEventDeps(producer=runner.producer)
+        with StreamRunner[SimplicityTask, str]() as runner:
+            event_deps = SimplicityTaskDeps(producer=runner.producer)
             async with runner.run(
                 engine.summary_qa(event_deps, "250v的电器(主要指充电头)在100v条件下能工作吗?" )
             ) as loop:
                 async for event in loop:
                     if isinstance(event.content, TaskOutput) and isinstance(event.content.data, list):
                         for x in event.content.data:
-                            if isinstance(x, (ReaderData, SearchData, QAData)):
-                                collected[x.id_] = x
+                            collected[x.id_] = x
                     cnt += 1
                     print(f"thinking: {cnt}")
                     print_task_event(event)

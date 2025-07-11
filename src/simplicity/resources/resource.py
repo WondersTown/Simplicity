@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from functools import cached_property
 
 from httpx import AsyncClient
+from tiktoken import Encoding, get_encoding
 
 from simplicity.resources.jina_client import JinaClient
 from simplicity.resources.pydantic_ai_llm import (
@@ -9,7 +10,6 @@ from simplicity.resources.pydantic_ai_llm import (
     create_pydantic_ai_model,
 )
 from simplicity.settings import Settings
-from tiktoken import get_encoding, Encoding
 
 
 @dataclass

@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import Annotated, TypeAlias
+from typing import Annotated, Sequence, TypeAlias
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
+from stone_brick.llm import TaskEvent, TaskEventDeps
 
 
 class SearchData(BaseModel):
@@ -64,3 +65,8 @@ class QAData(ReaderData):
 
 
 InfoData: TypeAlias = ReaderData | SearchData | QAData
+OutputDataType: TypeAlias = Sequence[InfoData] | str
+
+SimplicityTask: TypeAlias = TaskEvent[OutputDataType]
+SimplicityTaskOutput: TypeAlias = TaskEventDeps[OutputDataType]
+SimplicityTaskDeps: TypeAlias = TaskEventDeps[OutputDataType]
