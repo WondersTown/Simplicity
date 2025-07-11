@@ -98,7 +98,7 @@ class PardoEngine:
                 for x in idx_contexts
             ],
         )
-        answers = [x for x in answers if not isinstance(x, Exception)]
+        answers = [x for x in answers if x is not None and not isinstance(x, Exception)]
         await deps.send(TaskOutput(data=answers))
         return answers
 
@@ -125,6 +125,7 @@ if __name__ == "__main__":
     from simplicity.settings import Settings
     from simplicity.utils import get_settings_from_project_root
     logfire.configure()
+    logfire.instrument_openai()
     logfire.instrument_httpx()
     logfire.instrument_pydantic_ai()
     
