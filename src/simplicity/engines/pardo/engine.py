@@ -81,20 +81,20 @@ class PardoEngine:
             query_search = await translate(
                 deps.spawn(), self.translate_llm, query, search_lang
             )
-        searched = await self.jina_client.search_with_read(
+        searched = await self.jina_client.search(
             query_search,
-            num=self.config.read_pages,
+            page=1,
         )
-        await deps.send(TaskOutput(data=searched))
-        return searched
+        await deps.send(TaskOutput(data=searched.data))
+        return searched.data
 
     async def _map_reduce_qa(
-        self, deps: TaskEventDeps[OutputDataType], query: str, contexts: dict[str, ReaderData]
+        self, deps: TaskEventDeps[OutputDataType], query: str, contexts: dict[str, ReaderData | SearchData], *, jina: JinaClient | None = None
     ):
         idx_contexts = list(contexts.values())
         answers = await instrument(gather)(
             *[
-                single_qa_structured(deps.spawn(), self.single_qa_llm, query, x)
+                single_qa_structured(deps.spawn(), self.single_qa_llm, query, x, jina=jina)
                 for x in idx_contexts
             ],
         )
@@ -111,7 +111,7 @@ class PardoEngine:
     ):
         read = await self._search(deps.spawn(), query, search_lang)
         contexts = await self._map_reduce_qa(
-            deps.spawn(), query, {str(x.id_): x for x in read}
+            deps.spawn(), query, {str(x.id_): x for x in read}, jina=self.jina_client
         )
         llm_contexts = [x.llm_dump() for x in contexts]
         return await context_qa(deps, self.summary_qa_llm, query, llm_contexts)

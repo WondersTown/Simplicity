@@ -3,16 +3,24 @@ from pydantic_ai.agent import Agent
 from stone_brick.llm import TaskEventDeps
 from stone_brick.pydantic_ai_utils import PydanticAIDeps, prod_run
 
-from simplicity.resources import ModelWithSettings
-from simplicity.structure import QAData, ReaderData
+from simplicity.resources import JinaClient, ModelWithSettings
+from simplicity.structure import QAData, ReaderData, SearchData
+
 
 
 async def single_qa_structured(
     deps: TaskEventDeps,
     llm: ModelWithSettings,
     query: str,
-    source: ReaderData,
+    source: ReaderData | SearchData,
+    *,
+    jina: JinaClient | None = None,
 ) -> QAData | None:
+    if isinstance(source, SearchData):
+        if jina is None:
+            raise ValueError("Jina client is required for search data")
+        source = (await jina.read(source)).data
+
     answer = await single_qa(deps, llm, query, source.content)
     return QAData(
         **source.model_dump(),
