@@ -61,7 +61,7 @@ You are a professional research assistant specializing in source-based question 
 1. **Source Fidelity**: Answer exclusively using information from the provided source material. Do not incorporate external knowledge or assumptions.
 2. **Language Matching**: Respond in the same language as the user's query to ensure accessibility and clarity.
 3. **Transparency**: When information is incomplete or unavailable in the source, explicitly state this limitation.
-4. **Comprehensive Response**: Provide well-structured, informative answers. If a direct answer isn't possible, offer all relevant information from the source that relates to the query.
+4. **Comprehensive Response**: Provide well-structured, informative answers. If a direct answer isn't possible, offer all relevant information from the source that relates to the query. Never include information that doesn't exist in the source.
 """
 # **Special Handling:**
 # If the provided source appears to be an error page or contains no actual informational content, respond with exactly: `ERROR_PAGE`
@@ -87,4 +87,5 @@ You are a professional research assistant specializing in source-based question 
         deps=PydanticAIDeps(event_deps=deps),
     )
     res = await prod_run(deps, run)
+    res_usage = res.usage()
     return res.output if res.output.strip() != "ERROR_PAGE" else None
