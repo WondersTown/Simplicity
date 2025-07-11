@@ -42,6 +42,7 @@ class PardoEngine:
     single_qa_llm: ModelWithSettings
     summary_qa_llm: ModelWithSettings
     jina_client: JinaClient
+    resource: Resource
 
     @classmethod
     def new(
@@ -65,6 +66,7 @@ class PardoEngine:
             single_qa_llm=resource.get_llm(pardo_config.single_qa_model_name),
             summary_qa_llm=resource.get_llm(pardo_config.summary_qa_model_name),
             jina_client=resource.jina_client,
+            resource=resource,
         )
 
     async def _search(
@@ -94,7 +96,7 @@ class PardoEngine:
         idx_contexts = list(contexts.values())
         answers = await instrument(gather)(
             *[
-                single_qa_structured(deps.spawn(), self.single_qa_llm, query, x, jina=jina)
+                single_qa_structured(deps.spawn(), self.single_qa_llm, query, x, jina=jina, tokenizer=self.resource.tokenizer)
                 for x in idx_contexts
             ],
         )

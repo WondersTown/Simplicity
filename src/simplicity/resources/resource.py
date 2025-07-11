@@ -9,6 +9,7 @@ from simplicity.resources.pydantic_ai_llm import (
     create_pydantic_ai_model,
 )
 from simplicity.settings import Settings
+from tiktoken import get_encoding, Encoding
 
 
 @dataclass
@@ -54,6 +55,10 @@ class Resource:
             client=self.http_client,
             concurrency=self.settings.jina_reader_concurrency,
         )
+
+    @cached_property
+    def tokenizer(self) -> Encoding:
+        return get_encoding("cl100k_base")
 
     async def close(self):
         """Close the HTTP client when done."""

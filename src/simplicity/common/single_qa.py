@@ -5,8 +5,10 @@ from stone_brick.pydantic_ai_utils import PydanticAIDeps, prod_run
 
 from simplicity.resources import JinaClient, ModelWithSettings
 from simplicity.structure import QAData, ReaderData, SearchData
+from tiktoken import Encoding
 
 
+MIN_TOKEN_LENGTH = 400
 
 async def single_qa_structured(
     deps: TaskEventDeps,
@@ -15,11 +17,16 @@ async def single_qa_structured(
     source: ReaderData | SearchData,
     *,
     jina: JinaClient | None = None,
+    tokenizer: Encoding | None = None,
 ) -> QAData | None:
     if isinstance(source, SearchData):
         if jina is None:
             raise ValueError("Jina client is required for search data")
         source = (await jina.read(source)).data
+    if tokenizer is not None:
+        len_token = len(tokenizer.encode(source.content))
+        if len_token < MIN_TOKEN_LENGTH:
+            return None
 
     answer = await single_qa(deps, llm, query, source.content)
     return QAData(
