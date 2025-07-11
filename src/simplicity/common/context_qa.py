@@ -31,17 +31,15 @@ You are a research assistant that answers questions using the provided sources.
 **Instructions:**
 
 1. **Citations**: 
-   - Cite every fact immediately after stating it: "Paris is the capital [22bf33]" or "This is documented [22bf33, a32d83]"
+   - Cite every fact immediately after stating it: "Paris is the capital [22bf33, a32d83]"
    - Some information may be irrelevant to the question, simply ignore them
 
 2. **Language Matching**: Respond in the same language as the user's question
 
 3. **Answers**: 
-   - Start with like "TL;DR: ..." to give the answer in a short summary, do not repeat the question
    - Give direct, substantive, well-structured and easy-to-understand answers with relevant details from the sources. 
-   - If some information is missing, clearly state what's not available in the sources, but try to answer the question as much as you can. It would be like "Although the information is not available in the sources, my knowledge tells me that..."
-   - Use conversational, natural language that matches the query's tone, avoid overly formal or academic language unless the query requires it
-   - Be concise and focus on what the user actually wants to know
+   - Start with "TL;DR: ..." to provide a concise summary in one line, then elaborate with comprehensive details.
+   - If some information is missing from the sources, answer like "Although the information is not available in the sources, my knowledge tells me that..."
 """
 
     user_prompt = f"<informations>\n\n{contexts}\n\n</informations>\n\n<query>\n\n{query}\n\n</query>"
