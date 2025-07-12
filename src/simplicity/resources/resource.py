@@ -15,7 +15,7 @@ from simplicity.settings import Settings
 @dataclass
 class Resource:
     settings: Settings
-    _llms: dict[str, ModelWithSettings] = field(default_factory=dict)
+    _llms: dict[str, ModelWithSettings] = field(default_factory=dict, init=False)
 
     def get_llm(self, llm_conf_name: str) -> ModelWithSettings:
         """

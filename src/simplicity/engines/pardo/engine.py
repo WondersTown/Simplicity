@@ -52,12 +52,12 @@ class PardoEngine:
         cls,
         settings: Settings,
         resource: Resource,
-        engine_config: str | PardoEngineConfig,
+        engine_config: str | dict| PardoEngineConfig,
     ) -> Self:
         try:
-            if isinstance(engine_config, str):
+            if isinstance(engine_config, (str, dict)):
                 pardo_config = PardoEngineConfig.model_validate(
-                    settings.engine_configs[engine_config]
+                    settings.engine_configs[engine_config] if isinstance(engine_config, str) else engine_config
                 )
             else:
                 pardo_config = engine_config
@@ -110,7 +110,7 @@ class PardoEngine:
     @instrument
     async def summary_qa(
         self,
-        deps: TaskEventDeps[OutputDataType],
+        deps: SimplicityTaskDeps,
         query: str,
         search_lang: str | Literal["auto"] | None = "auto",
     ):
@@ -144,7 +144,7 @@ if __name__ == "__main__":
         with StreamRunner[SimplicityTask, str]() as runner:
             event_deps = SimplicityTaskDeps(producer=runner.producer)
             async with runner.run(
-                engine.summary_qa(event_deps, "250v的电器(主要指充电头)在100v条件下能工作吗?" )
+                engine.summary_qa(event_deps, "")
             ) as loop:
                 async for event in loop:
                     if isinstance(event.content, TaskOutput) and isinstance(event.content.data, list):
