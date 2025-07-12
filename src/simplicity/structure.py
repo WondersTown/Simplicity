@@ -13,7 +13,7 @@ class SearchData(BaseModel):
     description: str
 
     def llm_dump(self) -> dict:
-        return self.model_dump(exclude={"url"})
+        return self.model_dump()
 
 
 class ReaderData(SearchData):
@@ -43,7 +43,7 @@ class ReaderData(SearchData):
         return v
 
     def llm_dump(self) -> dict:
-        return self.model_dump(exclude={"images", "links", "url"})
+        return self.model_dump(exclude={"images", "links"})
 
 
 class QAData(ReaderData):
@@ -55,7 +55,6 @@ class QAData(ReaderData):
             exclude={
                 "images",
                 "links",
-                "url",
                 # For the raw reader data
                 "title",
                 "description",
@@ -65,7 +64,7 @@ class QAData(ReaderData):
 
 
 InfoData: TypeAlias = ReaderData | SearchData | QAData
-OutputDataType: TypeAlias = Sequence[InfoData] | str
+OutputDataType: TypeAlias = Sequence[InfoData]
 
 SimplicityTask: TypeAlias = TaskEvent[OutputDataType]
 SimplicityTaskOutput: TypeAlias = TaskEventDeps[OutputDataType]
