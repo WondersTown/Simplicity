@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Sequence, TypeAlias
+from typing import Annotated, Literal, Sequence, TypeAlias
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
@@ -7,6 +7,7 @@ from stone_brick.llm import TaskEvent, TaskEventDeps
 
 
 class SearchData(BaseModel):
+    kind: Literal["search"] = "search"
     id_: str = Field(default_factory=lambda: str(uuid4())[:6])
     title: str
     url: str
@@ -17,6 +18,7 @@ class SearchData(BaseModel):
 
 
 class ReaderData(SearchData):
+    kind: Literal["reader"] = "reader"
     content: str
     images: Annotated[dict[str, str], Field(default_factory=dict)]
     links: Annotated[dict[str, str], Field(default_factory=dict)]
@@ -47,6 +49,7 @@ class ReaderData(SearchData):
 
 
 class QAData(ReaderData):
+    kind: Literal["qa"] = "qa"
     query: str
     answer: str
 
@@ -67,5 +70,4 @@ InfoData: TypeAlias = ReaderData | SearchData | QAData
 OutputDataType: TypeAlias = Sequence[InfoData]
 
 SimplicityTask: TypeAlias = TaskEvent[OutputDataType]
-SimplicityTaskOutput: TypeAlias = TaskEventDeps[OutputDataType]
 SimplicityTaskDeps: TypeAlias = TaskEventDeps[OutputDataType]
