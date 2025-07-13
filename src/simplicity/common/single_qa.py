@@ -27,7 +27,7 @@ async def single_qa_structured(
 
     answer = await single_qa(deps, llm, query, source.content)
     return QAData(
-        **source.model_dump(),
+        **source.model_dump(exclude={"kind"}),
         query=query,
         answer=answer,
     ) if answer is not None else None

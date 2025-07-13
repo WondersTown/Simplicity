@@ -116,7 +116,7 @@ class PardoEngine:
     ):
         read = await self._search(deps.spawn(), query, search_lang)
         contexts = await self._map_reduce_qa(
-            deps.spawn(), query, {str(x.id_): x for x in read}, jina=self.jina_client
+            deps.spawn(), query, {x.id_: x for x in read}, jina=self.jina_client
         )
         llm_contexts = [x.llm_dump() for x in contexts]
         return await context_qa(deps, self.summary_qa_llm, query, llm_contexts)
