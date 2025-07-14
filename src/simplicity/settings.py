@@ -3,11 +3,12 @@ from typing import Any, Self
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.settings import ModelSettings
+from stone_brick.validate import EnvVar
 
 
 class OAIProvider(BaseModel):
-    base_url: str
-    api_key: str
+    base_url: EnvVar[str]
+    api_key: EnvVar[str]
 
     def to_provider(self) -> OpenAIProvider:
         return OpenAIProvider(
@@ -26,7 +27,7 @@ class OAILLMModel(BaseModel):
 class Settings(BaseModel):
     providers: dict[str, OAIProvider]
     llm_configs: dict[str, OAILLMModel]
-    jina_api_key: str | None = None
+    jina_api_key: EnvVar[str] | None = None
     jina_reader_concurrency: int = 3
     engine_configs: dict[str, dict[str, Any]]
 

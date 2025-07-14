@@ -5,7 +5,7 @@
 groups = ["default", "demo", "dev"]
 strategy = []
 lock_version = "4.5.0"
-content_hash = "sha256:e530b91b41d4ca0f6e8542d8ab639d58090ac2b55d6f3191a8f420d99649a819"
+content_hash = "sha256:5a81c8e4786f03e484a9b5d22e169dcc79cd0183c867a34f8747b45421072dd3"
 
 [[metadata.targets]]
 requires_python = ">=3.13"
@@ -1128,17 +1128,17 @@ files = [
 
 [[package]]
 name = "stone-brick-toolkit"
-version = "0.10.2"
+version = "0.11.1"
 requires_python = ">=3.10"
 summary = "Stone Brick is a toolkit providing some commonly used utilities."
 files = [
-    {file = "stone_brick_toolkit-0.10.2-py3-none-any.whl", hash = "sha256:7841bdf895618245161b8ba8b13b3b0f48338107c6af517670925eac5abb990c"},
-    {file = "stone_brick_toolkit-0.10.2.tar.gz", hash = "sha256:668a9373f8b56eabdfcfa03be516e9702f32a45a133f62e1233e9db4180070c7"},
+    {file = "stone_brick_toolkit-0.11.1-py3-none-any.whl", hash = "sha256:2f484e85e2bbddb01edc04c54a1c2185a94524c302b19b67614dc47dd1411d68"},
+    {file = "stone_brick_toolkit-0.11.1.tar.gz", hash = "sha256:ca25507f508fc114a01924d91800d92c2ba8b5f8888613f43a3f845b65da666a"},
 ]
 
 [[package]]
 name = "stone-brick-toolkit"
-version = "0.10.2"
+version = "0.11.1"
 extras = ["llm", "observability", "pydantic-ai", "retry"]
 requires_python = ">=3.10"
 summary = "Stone Brick is a toolkit providing some commonly used utilities."
@@ -1147,28 +1147,28 @@ dependencies = [
     "openai>=1.55.1",
     "opentelemetry-api>=1.28.2",
     "pydantic-ai-slim>=0.3.4",
-    "stone-brick-toolkit==0.10.2",
+    "stone-brick-toolkit==0.11.1",
     "stone-brick-toolkit[retry]",
     "tenacity>=8.5.0",
 ]
 files = [
-    {file = "stone_brick_toolkit-0.10.2-py3-none-any.whl", hash = "sha256:7841bdf895618245161b8ba8b13b3b0f48338107c6af517670925eac5abb990c"},
-    {file = "stone_brick_toolkit-0.10.2.tar.gz", hash = "sha256:668a9373f8b56eabdfcfa03be516e9702f32a45a133f62e1233e9db4180070c7"},
+    {file = "stone_brick_toolkit-0.11.1-py3-none-any.whl", hash = "sha256:2f484e85e2bbddb01edc04c54a1c2185a94524c302b19b67614dc47dd1411d68"},
+    {file = "stone_brick_toolkit-0.11.1.tar.gz", hash = "sha256:ca25507f508fc114a01924d91800d92c2ba8b5f8888613f43a3f845b65da666a"},
 ]
 
 [[package]]
 name = "stone-brick-toolkit"
-version = "0.10.2"
+version = "0.11.1"
 extras = ["retry"]
 requires_python = ">=3.10"
 summary = "Stone Brick is a toolkit providing some commonly used utilities."
 dependencies = [
-    "stone-brick-toolkit==0.10.2",
+    "stone-brick-toolkit==0.11.1",
     "tenacity>=8.5.0",
 ]
 files = [
-    {file = "stone_brick_toolkit-0.10.2-py3-none-any.whl", hash = "sha256:7841bdf895618245161b8ba8b13b3b0f48338107c6af517670925eac5abb990c"},
-    {file = "stone_brick_toolkit-0.10.2.tar.gz", hash = "sha256:668a9373f8b56eabdfcfa03be516e9702f32a45a133f62e1233e9db4180070c7"},
+    {file = "stone_brick_toolkit-0.11.1-py3-none-any.whl", hash = "sha256:2f484e85e2bbddb01edc04c54a1c2185a94524c302b19b67614dc47dd1411d68"},
+    {file = "stone_brick_toolkit-0.11.1.tar.gz", hash = "sha256:ca25507f508fc114a01924d91800d92c2ba8b5f8888613f43a3f845b65da666a"},
 ]
 
 [[package]]
