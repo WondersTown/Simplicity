@@ -1,7 +1,8 @@
-from simplicity.engines.pardo.engine import PardoEngine, PardoEngineConfig
+from typing import Annotated, Type, TypeAlias
 
-from typing import Annotated, TypeAlias, Type
 from pydantic import Field, TypeAdapter
+
+from simplicity.engines.pardo.engine import PardoEngine, PardoEngineConfig
 
 EngineConfig: TypeAlias = Annotated[PardoEngineConfig, Field(discriminator="engine")]
 Engine: TypeAlias = PardoEngine

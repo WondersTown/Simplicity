@@ -6,13 +6,13 @@ from stone_brick.llm import (
 from stone_brick.observability import instrument
 from stone_brick.pydantic_ai_utils import (
     PydanticAIDeps,
-    prod_run,
 )
 
 from simplicity.resources import (
     ModelWithSettings,
     Resource,
 )
+from simplicity.utils import calc_usage
 
 
 class Output(BaseModel):
@@ -43,16 +43,17 @@ DO split when:
 
 
 async def splitting_question(deps: TaskEventDeps, model: ModelWithSettings, query: str):
-    run = agent.run(
+    res = await agent.run(
         model=model.model,
         model_settings=model.settings,
         user_prompt=f"<query>\n{query}\n</query>",
         deps=PydanticAIDeps(event_deps=deps),
         output_type=Output,
     )
-    res = await prod_run(deps, run)
-    res = res.output
-    return list(res.subqueries)
+    usage = calc_usage(res.usage(), model.config_name)
+    await deps.send(usage)
+    res_output = res.output
+    return list(res_output.subqueries)
 
 
 @instrument

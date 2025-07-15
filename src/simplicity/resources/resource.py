@@ -36,6 +36,7 @@ class Resource:
             self._llms[llm_conf_name] = ModelWithSettings(
                 model=create_pydantic_ai_model(self.settings, llm_conf_name),
                 settings=self.settings.llm_configs[llm_conf_name].settings,
+                config_name=llm_conf_name,
             )
         return self._llms[llm_conf_name]
 

@@ -1,14 +1,15 @@
 from pydantic_ai.agent import Agent
-from stone_brick.pydantic_ai_utils import PydanticAIDeps, prod_run
+from stone_brick.pydantic_ai_utils import PydanticAIDeps
 from tiktoken import Encoding
 
 from simplicity.resources import JinaClient, ModelWithSettings
-from simplicity.structure import QAData, ReaderData, SearchData, SimplicityTaskDeps
+from simplicity.structure import QAData, ReaderData, SearchData, SimpTaskDeps
+from simplicity.utils import calc_usage
 
 MIN_TOKEN_LENGTH = 400
 
 async def single_qa_structured(
-    deps: SimplicityTaskDeps,
+    deps: SimpTaskDeps,
     llm: ModelWithSettings,
     query: str,
     source: ReaderData | SearchData,
@@ -34,7 +35,7 @@ async def single_qa_structured(
 
 
 async def single_qa(
-    deps: SimplicityTaskDeps,
+    deps: SimpTaskDeps,
     llm: ModelWithSettings,
     query: str,
     source: str,
@@ -79,10 +80,11 @@ You are a professional research assistant specializing in source-based question 
         system_prompt=SYSTEM_PROMPT,
         deps_type=PydanticAIDeps,
     )
-    run = agent.run(
+    res = await agent.run(
         user_prompt,
         deps=PydanticAIDeps(event_deps=deps),
     )
-    res = await prod_run(deps, run)
-    res_usage = res.usage()
-    return res.output if res.output.strip() != "ERROR_PAGE" else None
+    usage = calc_usage(res.usage(), llm.config_name)
+    await deps.send(usage)
+    res_output = res.output
+    return res_output if res_output.strip() != "ERROR_PAGE" else None

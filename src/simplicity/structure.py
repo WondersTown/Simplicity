@@ -1,9 +1,11 @@
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Annotated, Literal, Sequence, TypeAlias
+from typing import Annotated, Literal, Self, Sequence, TypeAlias
 from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
-from stone_brick.llm import TaskEvent, TaskEventDeps
+from pydantic.dataclasses import dataclass as pydantic_dataclass
+from stone_brick.llm import TaskEvent, TaskEventDeps, TaskOutput
 
 
 class SearchData(BaseModel):
@@ -66,8 +68,27 @@ class QAData(ReaderData):
         )
 
 
-InfoData: TypeAlias = ReaderData | SearchData | QAData
-OutputDataType: TypeAlias = Sequence[InfoData]
 
-SimplicityTask: TypeAlias = TaskEvent[OutputDataType]
-SimplicityTaskDeps: TypeAlias = TaskEventDeps[OutputDataType]
+@dataclass(slots=True, kw_only=True)
+class LLMUsage:
+    kind: Literal["llm_usage"] = "llm_usage"
+    input_tokens: int | None
+    output_tokens: int | None
+    config_name: str
+
+InfoData: TypeAlias = ReaderData | SearchData | QAData 
+
+@pydantic_dataclass(slots=True)
+class SimpOutput(BaseModel):
+    d: Annotated[InfoData| LLMUsage , Field(discriminator="kind")]
+    def llm_dump(self) -> dict:
+        return self.model_dump()
+
+    @classmethod
+    def gen(cls, d: Sequence[InfoData| LLMUsage]) -> Sequence[Self]:
+        return [cls(d=x) for x in d]
+
+
+SimpTaskOutput: TypeAlias = TaskOutput[Sequence[SimpOutput]]
+SimpTaskEvent: TypeAlias = TaskEvent[Sequence[SimpOutput]]
+SimpTaskDeps: TypeAlias = TaskEventDeps[Sequence[SimpOutput]]

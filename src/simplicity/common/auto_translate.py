@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from pydantic import BaseModel
@@ -7,14 +8,16 @@ from stone_brick.llm import (
 )
 from stone_brick.pydantic_ai_utils import (
     PydanticAIDeps,
-    prod_run,
 )
 
 from simplicity.resources import (
     ModelWithSettings,
     Resource,
 )
-from simplicity.structure import SimplicityTaskDeps
+from simplicity.structure import SimpTaskDeps
+from simplicity.utils import calc_usage
+
+logger = logging.getLogger(__name__)
 
 
 class Output(BaseModel):
@@ -64,20 +67,20 @@ Rules:
 )
 
 
-async def _auto_translate(deps: SimplicityTaskDeps, model: ModelWithSettings, query: str):
-    run = agent.run(
+async def _auto_translate(deps: SimpTaskDeps, model: ModelWithSettings, query: str):
+    res = await agent.run(
         model=model.model,
         model_settings=model.settings,
         user_prompt=f"<query>\n{query}\n</query>",
         deps=PydanticAIDeps(event_deps=deps),
         output_type=Output,
     )
-    res = await prod_run(deps, run)
-    res = res.output
-    return res
+    usage = calc_usage(res.usage(), model.config_name)
+    await deps.send(usage)
+    return res.output
 
 
-async def auto_translate(deps: SimplicityTaskDeps, model: ModelWithSettings, query: str):
+async def auto_translate(deps: SimpTaskDeps, model: ModelWithSettings, query: str):
     res = await _auto_translate(deps, model, query)
     return res.translated_query
 

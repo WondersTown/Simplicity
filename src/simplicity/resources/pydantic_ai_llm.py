@@ -7,10 +7,11 @@ from pydantic_ai.settings import ModelSettings
 from simplicity.settings import Settings
 
 
-@dataclass
+@dataclass(slots=True)
 class ModelWithSettings:
     model: PydanticAIModel
     settings: ModelSettings
+    config_name: str
 
 
 def create_pydantic_ai_model(settings: Settings, model_conf_name: str) -> PydanticAIModel:

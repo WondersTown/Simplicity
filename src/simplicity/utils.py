@@ -1,9 +1,14 @@
+import logging
 import os
 import re
 
 import tomli
+from pydantic_ai.usage import Usage
 
 from simplicity.settings import Settings
+from simplicity.structure import LLMUsage, SimpOutput, SimpTaskOutput
+
+logger = logging.getLogger(__name__)
 
 
 def get_project_root():
@@ -72,3 +77,19 @@ def match_link(text: str) -> list[tuple[int, int, list[str]]]:
         results.append((start_pos, end_pos, hashes))
     
     return results
+
+def calc_usage(usage: Usage, config_name: str) -> SimpTaskOutput:
+    if usage.request_tokens is None or usage.response_tokens is None:
+        logger.error("Usage is None for model: %s", config_name)
+    return SimpTaskOutput(
+        data=[
+            SimpOutput(
+                d=LLMUsage(
+                    kind="llm_usage",
+                    input_tokens=usage.request_tokens,
+                    output_tokens=usage.response_tokens,
+                    config_name=config_name,
+                )
+            )
+        ]
+    )

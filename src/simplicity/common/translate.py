@@ -1,9 +1,10 @@
 from pydantic import BaseModel
 from pydantic_ai.agent import Agent
-from stone_brick.pydantic_ai_utils import PydanticAIDeps, prod_run
+from stone_brick.pydantic_ai_utils import PydanticAIDeps
 
 from simplicity.resources import ModelWithSettings
-from simplicity.structure import SimplicityTaskDeps
+from simplicity.structure import SimpTaskDeps
+from simplicity.utils import calc_usage
 
 
 class Output(BaseModel):
@@ -18,7 +19,7 @@ agent = Agent(
 
 
 async def translate(
-    deps: SimplicityTaskDeps, model: ModelWithSettings, query: str, lang: str
+    deps: SimpTaskDeps, model: ModelWithSettings, query: str, lang: str
 ) -> str:
     """
     Translate text to a target language using the provided language model.
@@ -33,15 +34,15 @@ async def translate(
         The translated text
     """
 
-    run = agent.run(
+    res = await agent.run(
         model=model.model,
         model_settings=model.settings,
         user_prompt=f"<text>\n{query}\n</text>\n<target_lang>{lang}</target_lang>",
         deps=PydanticAIDeps(event_deps=deps),
     )
-    res = await prod_run(deps, run)
-    res = res.output
-    return res.translation
+    usage = calc_usage(res.usage(), model.config_name)
+    await deps.send(usage)
+    return res.output.translation
 
 
 if __name__ == "__main__":

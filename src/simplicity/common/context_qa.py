@@ -4,11 +4,12 @@ from pydantic_ai.agent import Agent
 from stone_brick.pydantic_ai_utils import PydanticAIDeps, prod_run_stream
 
 from simplicity.resources import ModelWithSettings
-from simplicity.structure import SimplicityTaskDeps
+from simplicity.structure import SimpTaskDeps
+from simplicity.utils import calc_usage
 
 
 async def context_qa(
-    deps: SimplicityTaskDeps,
+    deps: SimpTaskDeps,
     llm: ModelWithSettings,
     query: str,
     contexts: list[Any],
@@ -58,6 +59,8 @@ You are a research assistant that answers questions using the provided sources.
         deps=PydanticAIDeps(event_deps=deps),
     )
     res = await prod_run_stream(deps, run)
+    usage = calc_usage(res.usage(), llm.config_name)
+    await deps.send(usage)
     return await res.get_output()
 
 

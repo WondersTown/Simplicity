@@ -5,7 +5,6 @@ from pydantic import BaseModel
 from stone_brick.asynclib import gather
 from stone_brick.asynclib.stream_runner import StreamRunner
 from stone_brick.llm import (
-    TaskEventDeps,
     TaskOutput,
     print_task_event,
 )
@@ -22,12 +21,13 @@ from simplicity.resources import (
 )
 from simplicity.settings import Settings
 from simplicity.structure import (
-    OutputDataType,
+    InfoData,
     QAData,
     ReaderData,
     SearchData,
-    SimplicityTask,
-    SimplicityTaskDeps,
+    SimpOutput,
+    SimpTaskDeps,
+    SimpTaskEvent,
 )
 
 
@@ -74,7 +74,7 @@ class PardoEngine:
 
     async def _search(
         self,
-        deps: SimplicityTaskDeps,
+        deps: SimpTaskDeps,
         query: str,
         search_lang: str | Literal["auto"] | None = "auto",
     ):
@@ -90,11 +90,11 @@ class PardoEngine:
             query_search,
             page=1,
         )
-        await deps.send(TaskOutput(data=searched.data))
+        await deps.send(TaskOutput(data=SimpOutput.gen(searched.data)))
         return searched.data
 
     async def _map_reduce_qa(
-        self, deps: SimplicityTaskDeps, query: str, contexts: dict[str, ReaderData | SearchData], *, jina: JinaClient | None = None
+        self, deps: SimpTaskDeps, query: str, contexts: dict[str, ReaderData | SearchData], *, jina: JinaClient | None = None
     ):
         idx_contexts = list(contexts.values())
         answers = await instrument(gather)(
@@ -104,13 +104,13 @@ class PardoEngine:
             ],
         )
         answers = [x for x in answers if x is not None and not isinstance(x, Exception)]
-        await deps.send(TaskOutput(data=answers))
+        await deps.send(TaskOutput(data=SimpOutput.gen(answers)))
         return answers
 
     @instrument
     async def summary_qa(
         self,
-        deps: SimplicityTaskDeps,
+        deps: SimpTaskDeps,
         query: str,
         search_lang: str | Literal["auto"] | None = "auto",
     ):
@@ -141,15 +141,16 @@ if __name__ == "__main__":
         engine = PardoEngine.new(settings, resource, "pardo-flash")
         cnt = 0
         collected: dict[str, ReaderData | SearchData | QAData] = {}
-        with StreamRunner[SimplicityTask, str]() as runner:
-            event_deps = SimplicityTaskDeps(producer=runner.producer)
+        with StreamRunner[SimpTaskEvent, str]() as runner:
+            event_deps = SimpTaskDeps(producer=runner.producer)
             async with runner.run(
                 engine.summary_qa(event_deps, "")
             ) as loop:
                 async for event in loop:
                     if isinstance(event.content, TaskOutput) and isinstance(event.content.data, list):
                         for x in event.content.data:
-                            collected[x.id_] = x
+                            if isinstance(x.d, InfoData):
+                                collected[x.d.id_] = x.d
                     cnt += 1
                     print(f"thinking: {cnt}")
                     print_task_event(event)
