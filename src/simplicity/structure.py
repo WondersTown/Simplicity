@@ -79,10 +79,8 @@ class LLMUsage:
 InfoData: TypeAlias = ReaderData | SearchData | QAData 
 
 @pydantic_dataclass(slots=True)
-class SimpOutput(BaseModel):
+class SimpOutput:
     d: Annotated[InfoData| LLMUsage , Field(discriminator="kind")]
-    def llm_dump(self) -> dict:
-        return self.model_dump()
 
     @classmethod
     def gen(cls, d: Sequence[InfoData| LLMUsage]) -> Sequence[Self]:

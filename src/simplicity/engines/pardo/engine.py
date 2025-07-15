@@ -144,7 +144,7 @@ if __name__ == "__main__":
         with StreamRunner[SimpTaskEvent, str]() as runner:
             event_deps = SimpTaskDeps(producer=runner.producer)
             async with runner.run(
-                engine.summary_qa(event_deps, "")
+                engine.summary_qa(event_deps, "如何在网关上配置 SPA 网页的前端 router、API 服务器以及静态资源")
             ) as loop:
                 async for event in loop:
                     if isinstance(event.content, TaskOutput) and isinstance(event.content.data, list):
