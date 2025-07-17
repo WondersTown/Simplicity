@@ -6,7 +6,7 @@ import tomli
 from pydantic_ai.usage import Usage
 
 from simplicity.settings import Settings
-from simplicity.structure import LLMUsage, SimpOutput, SimpTaskOutput
+from simplicity.structure import TokenUsage, SimpOutput, SimpTaskOutput
 
 logger = logging.getLogger(__name__)
 
@@ -84,8 +84,7 @@ def calc_usage(usage: Usage, config_name: str) -> SimpTaskOutput:
     return SimpTaskOutput(
         data=[
             SimpOutput(
-                d=LLMUsage(
-                    kind="llm_usage",
+                d=TokenUsage(
                     input_tokens=usage.request_tokens,
                     output_tokens=usage.response_tokens,
                     config_name=config_name,

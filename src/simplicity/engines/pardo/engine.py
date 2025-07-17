@@ -28,6 +28,9 @@ from simplicity.structure import (
     SimpOutput,
     SimpTaskDeps,
     SimpTaskEvent,
+    TokenUsage,
+    StaticTokenUsageName,
+    SimpTaskOutput,
 )
 
 
@@ -90,6 +93,12 @@ class PardoEngine:
             query_search,
             page=1,
         )
+        usage = TokenUsage(
+            input_tokens=None,
+            output_tokens=searched.meta.usage.tokens,
+            config_name=StaticTokenUsageName.JINA_SEARCH.value,
+        )
+        await deps.send(TaskOutput(data=SimpOutput.gen([usage])))
         await deps.send(TaskOutput(data=SimpOutput.gen(searched.data)))
         return searched.data
 
@@ -104,7 +113,7 @@ class PardoEngine:
             ],
         )
         answers = [x for x in answers if x is not None and not isinstance(x, Exception)]
-        await deps.send(TaskOutput(data=SimpOutput.gen(answers)))
+        await deps.send(SimpTaskOutput(data=SimpOutput.gen(answers)))
         return answers
 
     @instrument
@@ -138,7 +147,7 @@ if __name__ == "__main__":
     async def main():
         settings = get_settings_from_project_root()
         resource = Resource(settings)
-        engine = PardoEngine.new(settings, resource, "pardo-flash")
+        engine = PardoEngine.new(settings, resource, "pardo-pro")
         cnt = 0
         collected: dict[str, ReaderData | SearchData | QAData] = {}
         with StreamRunner[SimpTaskEvent, str]() as runner:

@@ -6,6 +6,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field, field_validator
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from stone_brick.llm import TaskEvent, TaskEventDeps, TaskOutput
+from enum import StrEnum
 
 
 class SearchData(BaseModel):
@@ -70,20 +71,25 @@ class QAData(ReaderData):
 
 
 @dataclass(slots=True, kw_only=True)
-class LLMUsage:
-    kind: Literal["llm_usage"] = "llm_usage"
+class TokenUsage:
+    kind: Literal["token_usage"] = "token_usage"
     input_tokens: int | None
     output_tokens: int | None
     config_name: str
+
+class StaticTokenUsageName(StrEnum):
+    JINA_SEARCH = "jina_search"
+    JINA_READ = "jina_read"
+
 
 InfoData: TypeAlias = ReaderData | SearchData | QAData 
 
 @pydantic_dataclass(slots=True)
 class SimpOutput:
-    d: Annotated[InfoData| LLMUsage , Field(discriminator="kind")]
+    d: Annotated[InfoData| TokenUsage , Field(discriminator="kind")]
 
     @classmethod
-    def gen(cls, d: Sequence[InfoData| LLMUsage]) -> Sequence[Self]:
+    def gen(cls, d: Sequence[InfoData| TokenUsage]) -> Sequence[Self]:
         return [cls(d=x) for x in d]
 
 
