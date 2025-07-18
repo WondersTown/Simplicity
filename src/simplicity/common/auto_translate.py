@@ -82,7 +82,7 @@ async def _auto_translate(deps: SimpTaskDeps, model: ModelWithSettings, query: s
 
 async def auto_translate(deps: SimpTaskDeps, model: ModelWithSettings, query: str):
     res = await _auto_translate(deps, model, query)
-    return res.translated_query
+    return (res.translated_query + (f" lang:{res.target_lang}" if res.target_lang != "en" else ""))
 
 
 if __name__ == "__main__":

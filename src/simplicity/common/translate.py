@@ -42,7 +42,7 @@ async def translate(
     )
     usage = calc_usage(res.usage(), model.config_name)
     await deps.send(usage)
-    return res.output.translation
+    return (res.output.translation + (f" lang:{lang}" if lang != "en" else ""))
 
 
 if __name__ == "__main__":
